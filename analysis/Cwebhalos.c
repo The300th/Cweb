@@ -13,7 +13,7 @@
 //=================================================================================
 #define AHF_ASCII  // we still allow AHF_halos to be in ASCII format
 //#define DEBUG
-#define READ_FOFHALOS
+//#define READ_FOFHALOS
 
 //===================================================================
 // the headers for the ASCII output files
