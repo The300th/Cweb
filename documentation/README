@@ -1,0 +1,90 @@
+==================================================================
+     quick-and-dirty user's guide for AMIGA's Web Classifier
+ (the code uses the Cweb and hence the present naming convention)
+==================================================================
+
+- the mode of operation is in fact identical to AMIGA's Halo Finder (AHF) which is described in http://popia.ft.uam.es/AHF/files/AHF.pdf (all DEFINEFLAGS and features are present in Cweb too, and should be used in the same way.)
+
+
+Cweb
+====
+
+- based upon AHF and its adaptive mesh refinement capabilities Cweb has been built: a code calculating the eigenvalues and eigenvectors of the velocity shear tensor in every grid cells of the full AMR hierarchy.
+
+- check http://arxiv.org/abs/1201.3367 for the physical details (paper can also be found inside documentation/)
+
+- check AHF's users-guide.pdf (http://popia.ft.uam.es/AHF/files/AHF.pdf) for
+	- how to compile the code and 
+	- how to feed your favourite simulation into it.
+
+
+
+just some random notes that might help to get the code up-and-running quickly:
+
+Makefile.config:
+----------------
+- adjust in the same way as you would adjust AHF, primarily using
+	-DMULTIMASS	if there are particles with different masses in your simulation
+	-DGAS_PARTICLES	if there are gas and/or star particles in your simulation
+
+- DWRITE_GRIDDATA will write a file (with meaningful name) that contains all the density fields *before* any smoothing
+- DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing)
+---> reading/writing grid data has not been tested yet for the MPI version
+
+- you can make the following codes:
+	$ make Cweb
+	$ make Cweb2ascii
+	$ make Cwebhalos
+
+  where Cweb is the main code, Cweb2ascii converts the binary output of Cweb to ASCII, Cwebhalos correlates the output of Cweb to AHF's *_halos file
+
+
+Cweb.input-example:
+-------------------
+- you should primarily be concerned with
+	- LGridDomain
+	- LGridMax
+	-> it is strongly suggested to only run the code with LGridDomain=LGridMax, ignoring all adaptive capabilities
+
+- if LGridDomain=LGridMax, then NperDomCell and NperRefCell are meaningless and can be set to whatever you like
+
+- Rsmooth will smooth the density fields on this scale as given in [Mpc/h]; but note, if that scale is smaller than twice the grid spacing, the scaling will not take place as it is meaningless
+
+
+- CAREFULLY check the units you provide for your simulation snapshot file (cf. the block [GADGET], [TIPSY], whatever)
+
+
+src/define.h:
+-------------
+- all DEFINEFLAGS can also be switched on here, but best to leave the 'standard' stuff alone
+
+
+analysis/plot_Cweb.py
+---------------------
+This is likely the most important code as everyone uses Python these days. This snippet shows you how to read either a Cweb-ascii or (even better!) a Cweb binary file and extract relevant information/data from it.
+
+
+
+analysis/Cweb2ascii.c:
+----------------------
+This is the old school way to deal with the binary files written by the Cweb code. You can use it as a converter to an ASCII file (for a selected list of properties) or as a starting point for your own C post-processing code.
+
+either...
+
+- activate WRITE_FULL_SET to get a full ASCII dump of Cweb's binary output
+
+or
+
+- define in write_Cweb() what quantities you are interested in 
+
+
+analysis/Cwebhalos.c:
+---------------------
+- generates a file that lists for every halo which kind of cell it lies in 
+- here lambda_threshold is in fact the important quantity to classify the cosmic web
+- ahf2Cweb is the conversion factor to go from AHF's length units to Cweb units
+
+
+====>
+WHILE Cweb COULD BE USED AS A BLACK BOX, THE POST-PROCESSING AND ANAYSIS OF ITS OUTPUT FILES REQUIRE THE USER TO LOOK INTO Cweb2ascii.c and Cwebhalos.c!
+====>

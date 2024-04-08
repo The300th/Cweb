@@ -1,0 +1,57 @@
+[CWEB]
+
+# (stem of the) filename from which to read the data to be analysed
+ic_filename       = ../00DATA/SubhaloesGoingNotts/snap_C02_400_1023.
+
+# what type of input file (cf. src/libio/io_file.h)
+ic_filetype       = 61
+
+# prefix for the output files
+outfile_prefix    = test-v010.snap_C02_400_1023
+
+# number of grid cells for the domain grid (1D)
+LgridDomain       = 64
+
+# number of grid cells for the domain grid (1D) (limits spatial resolution to BoxSize/LgridMax)
+LgridMax          = 64
+
+# refinement criterion on domain grid (#particles/cell)
+NperDomCell       = 5.0
+
+# refinement criterion on all higher resolution grids (#particles/cells)
+NperRefCell       = 5.0
+
+# the density and velocity fields will be smoothed with a Gaussian filter on this scale ([Mpc/h])
+Rsmooth           = 3
+
+# the level on which to perform the domain decomposition (MPI only, 4=16^3, 5=32^3, 6=64^3, 7=128^3, 8=256^3, etc.)
+#LevelDomainDecomp = 6    THIS WILL ALWAYS BE log2(iLgridDomain)!!!!!
+
+# how many CPU's for reading (MPI only)
+NcpuReading       = 1
+
+############################### FILE SPECIFIC DEFINITIONS ###############################
+
+# NOTE: all these factors are supposed to transform your internal units to
+#           [x] = Mpc/h
+#           [v] = km/sec
+#           [m] = Msun/h
+#           [e] = (km/sec)^2
+
+[GADGET]
+GADGET_LUNIT      = 1.
+GADGET_MUNIT      = 1e10
+
+[AHF_HALOS]
+HALOS_N           = 53627182
+HALOS_BOXSIZE     = 320.
+HALOS_REDSHIFT    = 0.0
+
+[TIPSY]
+TIPSY_BOXSIZE       = 50.0
+TIPSY_MUNIT         = 4.75e16
+TIPSY_VUNIT         = 1810.1
+TIPSY_EUNIT         = 0.0
+TIPSY_OMEGA0        = 0.24
+TIPSY_LAMBDA0       = 0.76
+
