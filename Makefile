@@ -57,11 +57,11 @@ clean:	FORCE
 veryclean:	FORCE
 	@echo '';\
 	echo '*=======================================================================*';\
-	echo ' ${MAKE} veryclean: removing all unneeded files (incl. emacs backup files!)';\
+	echo ' ${MAKE} veryclean: removing all unneeded files (incl. bin/*)';\
 	echo '*=======================================================================*';\
 	echo '';\
 	echo ''
-	rm -f *~ *~.*;\
+	rm -f *~ *~.* bin/*;\
 	cd src; ${MAKE} veryclean
 
 FORCE:	

@@ -15,12 +15,6 @@ LgridDomain       = 64
 # number of grid cells for the domain grid (1D) (limits spatial resolution to BoxSize/LgridMax)
 LgridMax          = 64
 
-# refinement criterion on domain grid (#particles/cell)
-NperDomCell       = 5.0
-
-# refinement criterion on all higher resolution grids (#particles/cells)
-NperRefCell       = 5.0
-
 # the density and velocity fields will be smoothed with a Gaussian filter on this scale ([Mpc/h])
 Rsmooth           = 3
 
@@ -29,6 +23,10 @@ Rsmooth           = 3
 
 # how many CPU's for reading (MPI only)
 NcpuReading       = 1
+
+# adaptive mesh capabilities have not yet been added to Cweb: ignore these parameters
+NperDomCell       = 5.0  # refinement criterion on domain grid (#particles/cell)
+NperRefCell       = 5.0  # refinement criterion on all higher resolution grids (#particles/cells)
 
 ############################### FILE SPECIFIC DEFINITIONS ###############################
 
