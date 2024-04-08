@@ -40,6 +40,14 @@ NperRefCell       = 5.0  # refinement criterion on all higher resolution grids (
 GADGET_LUNIT      = 1.
 GADGET_MUNIT      = 1e10
 
+[GIZMO]
+GIZMO_LUNIT       = 1.
+GIZMO_MUNIT       = 1e10
+
+[PKDGRAV]
+PKDGRAV_MUNIT       =  3.964816e20
+PKDGRAV_LUNIT       =  1.428571e06
+
 [AHF_HALOS]
 HALOS_N           = 53627182
 HALOS_BOXSIZE     = 320.
