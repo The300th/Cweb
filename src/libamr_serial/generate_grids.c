@@ -422,7 +422,7 @@ void read_griddata(gridls **grid_list, int *no_grids, char *filename)
   sprintf(infile,"%s-%05d",infile,simu.NGRID_DOM);
   
 #ifdef WITH_MPI
-  sprintf(infile,"%s-MPIrank%d",outfile,global_mpi.rank);
+  sprintf(infile,"%s-MPIrank%d",infile,global_mpi.rank);
 #endif
   
   // the domain grid pointer
