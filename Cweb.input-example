@@ -1,32 +1,22 @@
 [CWEB]
 
 # (stem of the) filename from which to read the data to be analysed
-ic_filename       = ../00DATA/SubhaloesGoingNotts/snap_C02_400_1023.
+ic_filename       = /Users/aknebe/Office/DATA/Tests/AHF/00DATA/HaloesGoingMAD/FullBox_z0.0_0256
 
 # what type of input file (cf. src/libio/io_file.h)
-ic_filetype       = 61
+ic_filetype       = 60
 
 # prefix for the output files
-outfile_prefix    = test-v010.snap_C02_400_1023
+outfile_prefix    = FullBox_z0.0_0256
 
-# number of grid cells for the domain grid (1D)
-LgridDomain       = 64
-
-# number of grid cells for the domain grid (1D) (limits spatial resolution to BoxSize/LgridMax)
-LgridMax          = 64
+# number of grid cells for the domain grid (1D) (limits spatial resolution to BoxSize/Lgrid)
+Lgrid             = 128
 
 # the density and velocity fields will be smoothed with a Gaussian filter on this scale ([Mpc/h])
-Rsmooth           = 3
-
-# the level on which to perform the domain decomposition (MPI only, 4=16^3, 5=32^3, 6=64^3, 7=128^3, 8=256^3, etc.)
-#LevelDomainDecomp = 6    THIS WILL ALWAYS BE log2(iLgridDomain)!!!!!
+Rsmooth           = 15
 
 # how many CPU's for reading (MPI only)
 NcpuReading       = 1
-
-# adaptive mesh capabilities have not yet been added to Cweb: ignore these parameters
-NperDomCell       = 5.0  # refinement criterion on domain grid (#particles/cell)
-NperRefCell       = 5.0  # refinement criterion on all higher resolution grids (#particles/cells)
 
 ############################### FILE SPECIFIC DEFINITIONS ###############################
 
@@ -37,7 +27,7 @@ NperRefCell       = 5.0  # refinement criterion on all higher resolution grids (
 #           [e] = (km/sec)^2
 
 [GADGET]
-GADGET_LUNIT      = 1.
+GADGET_LUNIT      = 1.e-3
 GADGET_MUNIT      = 1e10
 
 [GIZMO]

@@ -37,7 +37,7 @@
                                 *     deals with baryons in the simulation
                                 *   - if you do not switch */
 
-
+//#define DMfocus           // ignore all gas and star particles, only keeping (all) dark matter particles (cf. main.c for the selection if() statement)
 //#define USE_FFT3             /* if you have FFT3 installed, you might like to use that                             */
 //#define WITH_MPI             /* switch on MPI domain decomposition                                                 */
 //#define WITH_OPENMP          /* switch on OpenMP parallisation of for-loops                                        */

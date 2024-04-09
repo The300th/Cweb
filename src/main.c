@@ -201,12 +201,12 @@ int main(int argc, char **argv)
 #endif /* DEBUG_STARTRUN */
   
   /*==========================================================================================
-   * AHFdmfocus:
+   * DMfocus:
    *
    * keep dark matter particles for the analysis
    *
    *==========================================================================================*/
-#if (defined AHFdmfocus && defined MULTIMASS && defined GAS_PARTICLES)
+#if (defined DMfocus && defined MULTIMASS && defined GAS_PARTICLES)
   /* global_info.no_part
    * global_info.fst_part
    *                       => the no. of particles and relevant pointer for this CPU */
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
     int           ikeep;
     
     fprintf(stderr,"\n==================================================================\n");
-    fprintf(stderr,"                          AHFdmfocus\n");
+    fprintf(stderr,"                          DMfocus\n");
     fprintf(stderr,"               ? ARE YOU SURE ABOUT THIS FLAG ?\n");
     fprintf(stderr,"==================================================================\n");
     fprintf(stderr,"AHF will now remove all particles whose type is 0 and 4, i.e. only keeping the dark matter particles\n");
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"ended with %ld particles\n\n",global_info.no_part);
   }
   timing.ptfocus += time(NULL);
-#endif /* AHFdmfocus */
+#endif /* DMfocus */
   
   
   /*==========================================================================================

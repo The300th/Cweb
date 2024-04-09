@@ -26,6 +26,7 @@ Makefile.config:
 - adjust in the same way as you would adjust AHF, primarily using
 	-DMULTIMASS	if there are particles with different masses in your simulation
 	-DGAS_PARTICLES	if there are gas and/or star particles in your simulation
+- DMfocus will ignore all gas and star particles and only keep (all) DM particles for the analysis
 
 - DWRITE_GRIDDATA will write a file (with meaningful name) that contains all the density fields *before* any smoothing
 - DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing)

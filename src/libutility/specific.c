@@ -1339,6 +1339,7 @@ void write_parameterfile()
         fprintf(fpparam,"RSMOOTH                    \t\t%g\n",              simu.RSMOOTH);
         fprintf(fpparam,"NGRID_DOM                  \t\t%d\n",            simu.NGRID_DOM);
         fprintf(fpparam,"NGRID_MAX                  \t\t%d\n",            simu.NGRID_MAX);
+        fprintf(fpparam,"DMfocus                    \t\t%g\n",                   DMfocus);
         fprintf(fpparam,"MIN_NNODES                 \t\t%d\n",                MIN_NNODES);
         fprintf(fpparam,"MAXTIME                    \t\t%d\n",                   MAXTIME);
         fprintf(fpparam,"MAXSTRING                  \t\t%d\n",                 MAXSTRING);
@@ -1351,7 +1352,7 @@ void write_parameterfile()
         fprintf(fpparam,"ZERO                       \t\t%g\n",                      ZERO);
         fprintf(fpparam,"MACHINE_ZERO               \t\t%g\n",              MACHINE_ZERO);
         fprintf(fpparam,"MZERO                      \t\t%g\n",                     MZERO);
-        
+
         fprintf(fpparam,"\n");
         fprintf(fpparam,"gravity solver related parameter:\n");
         fprintf(fpparam,"---------------------------------\n");

@@ -8,6 +8,7 @@
 /*--- Includes ----------------------------------------------------------*/
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 
 #include "io_parameter.h"
 #include "io_util.h"
@@ -165,19 +166,22 @@ local_readRequired(io_parameter_t params, parse_ini_t ini)
 
 	/* Get the domain grid size */
 	getFromIni(&(params->NGRID_DOM), parse_ini_get_int32,
-	           ini, "LgridDomain", local_secName);
+	           ini, "Lgrid", local_secName);
 
 	/* Get the maximum grid size */
-	getFromIni(&(params->NGRID_MAX), parse_ini_get_int32,
-	           ini, "LgridMax", local_secName);
+//	getFromIni(&(params->NGRID_MAX), parse_ini_get_int32,
+//	           ini, "LgridMax", local_secName);
+  params->NGRID_MAX = params->NGRID_DOM;
   
 	/* Get the refinment criterion for the domain grid */
-	getFromIni(&(params->Nth_dom), parse_ini_get_double,
-	           ini, "NperDomCell", local_secName);
+//	getFromIni(&(params->Nth_dom), parse_ini_get_double,
+//	           ini, "NperDomCell", local_secName);
+  params->Nth_dom = 10000;
 
 	/* Get the refinement criterion for the refinment grids */
-	getFromIni(&(params->Nth_ref), parse_ini_get_double,
-	           ini, "NperRefCell", local_secName);
+//	getFromIni(&(params->Nth_ref), parse_ini_get_double,
+//	           ini, "NperRefCell", local_secName);
+  params->Nth_ref = 10000;
 
 	/* Get the tune parameter for the escape velocity */
 	getFromIni(&(params->RSMOOTH), parse_ini_get_double,
@@ -196,6 +200,11 @@ local_readRequired(io_parameter_t params, parse_ini_t ini)
 	/* Get the LOADBALANCE_DOMAIN_GRID */
 	// getFromIni(&(params->lb_level), parse_ini_get_int32,
 	//            ini, "LevelDomainDecomp", local_secName);
+  params->lb_level = (int)log2(params->NGRID_DOM)-3; // data distribution using grid three levels coarser tahn actual grid (because of all the neighbouring cells needed for the derivatives!)
+  if(params->lb_level <= 0) {
+    fprintf(stderr,"Your Lgrid is too small to make sense with the MPI version\nABORTING\n");
+    exit(-1);
+  }
 #else
   params->reader   = 1;
 	params->lb_level = 0;
