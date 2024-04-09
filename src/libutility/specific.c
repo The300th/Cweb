@@ -1339,7 +1339,9 @@ void write_parameterfile()
         fprintf(fpparam,"RSMOOTH                    \t\t%g\n",              simu.RSMOOTH);
         fprintf(fpparam,"NGRID_DOM                  \t\t%d\n",            simu.NGRID_DOM);
         fprintf(fpparam,"NGRID_MAX                  \t\t%d\n",            simu.NGRID_MAX);
+#ifdef DMfocus
         fprintf(fpparam,"DMfocus                    \t\t%g\n",                   DMfocus);
+#endif
         fprintf(fpparam,"MIN_NNODES                 \t\t%d\n",                MIN_NNODES);
         fprintf(fpparam,"MAXTIME                    \t\t%d\n",                   MAXTIME);
         fprintf(fpparam,"MAXSTRING                  \t\t%d\n",                 MAXSTRING);
