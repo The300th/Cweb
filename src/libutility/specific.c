@@ -1564,20 +1564,20 @@ void write_parameterfile()
 #else
         fprintf(fpparam,"DWEB                       \t\t0\n");
 #endif
-#ifdef DWEB_MHD
-        fprintf(fpparam,"DWEB_MHD                   \t\t1\n");
+#ifdef DWEB_AK
+        fprintf(fpparam,"DWEB_AK                    \t\t1\n");
 #else
-        fprintf(fpparam,"DWEB_MHD                   \t\t0\n");
+        fprintf(fpparam,"DWEB_AK                    \t\t0\n");
 #endif
 #ifdef PWEB
         fprintf(fpparam,"PWEB                       \t\t1\n");
 #else
         fprintf(fpparam,"PWEB                       \t\t0\n");
 #endif
-#ifdef PWEB_MHD
-        fprintf(fpparam,"PWEB_MHD                   \t\t1\n");
+#ifdef PWEB_AK
+        fprintf(fpparam,"PWEB_AK                    \t\t1\n");
 #else
-        fprintf(fpparam,"PWEB_MHD                   \t\t0\n");
+        fprintf(fpparam,"PWEB_AK                    \t\t0\n");
 #endif
 #ifdef MHD_SMOOTHING
         fprintf(fpparam,"MHD_SMOOTHING              \t\t1\n");

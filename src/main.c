@@ -688,57 +688,6 @@ int main(int argc, char **argv)
   simu.GADGET_m2Msunh= global_io.params->GADGET_m2Msunh;
   simu.GADGET_l2Mpch = global_io.params->GADGET_l2Mpch;
   
-  // these values are usually found in the snapshot header:
-  //  global.z              = GRID_redshift;
-  //  simu.boxsize          = GRID_boxsize;  // in Mpc/h
-  //  simu.omega0           = GRID_omega0;
-  //  simu.lambda0          = GRID_lambda0;
-  //  simu.pmass            = 1.5e9;  // in Msun/h
-  //  simu.no_part          = pow3(1024);
-  
-  // dependent and/or irrelevant parameters (that nevertheless need a value...) DO NOT CHANGE!
-  global.a              = 1./(1.+global.z);
-  global.super_t        = calc_super_t(global.a);
-  global.t              = calc_t(global.a);
-  simu.no_vpart         = simu.no_part;
-  simu.no_species       = 1;
-  simu.a_initial        = 0.001;
-  simu.a_final          = 1.0;
-  create_timeline(simu.a_initial, simu.a_final, &simu.timeline);
-  simu.z_initial        = (double)1.0/simu.a_initial - (double)1.0;
-  simu.z_final          = (double)1.0/simu.a_final   - (double)1.0;
-  simu.multi_mass       = 0.0;
-  simu.min_weight       = 1.0;
-  simu.max_weight       = 1.0;
-  simu.t_unit           = 1.0/H0;
-  simu.np_limit         = TRUE;
-  simu.mean_dens        = (double) 1.0;
-  simu.double_precision = 0;
-  simu.mmfocus          = 0;
-  simu.hydro            = 0;
-  simu.magneto          = 0;
-  simu.SHIFT            = ((double)0.5000000/(double) simu.NGRID_DOM);
-  simu.FourPiG          = 1.5*simu.omega0;
-  simu.super_t_initial  = calc_super_t(simu.a_initial);
-  simu.super_t_final    = calc_super_t(simu.a_final);
-  simu.t_initial        = calc_t(simu.a_initial);
-  simu.t_final          = calc_t(simu.a_final);
-  simu.gamma            = 0.0;
-  simu.omegab           = 0.0;
-  simu.omegaDM          = simu.omega0;
-  simu.f_b              = 0.0;
-  simu.H_frac           = 0.0;
-  simu.T_init           = 0.0;
-  simu.B_init           = 0.0;
-  simu.e_init           = 0.0;
-  simu.no_halos         = 0;
-  simu.med_weight       = simu.max_weight;
-  simu.l_unit           = 0.0;
-  simu.m_unit           = 0.0;
-  simu.no_gas           = 0;
-  simu.no_stars         = 0;
-  fprintf(stderr,"done\n");
-  
 #endif // READ_GRIDDATA
   
   
@@ -799,6 +748,7 @@ int main(int argc, char **argv)
   /* make *current* time step available to AHF/etc. routines */
   global.no_timestep = no_first_timestep;
   
+#ifndef READ_GRIDDATA
   /*=========================================================================================
    * recursively call gen_AMRhierarchy() to generate the AMR hierarchy...
    *=========================================================================================*/
@@ -811,7 +761,7 @@ int main(int argc, char **argv)
   global.fst_cycle = TRUE;
   
   gen_AMRhierarchy(&grid_list, &no_grids);
-  
+#endif // READ_GRIDDATA
   
   /*=========================================================================================
    * do we need the potential?
@@ -838,6 +788,49 @@ int main(int argc, char **argv)
   read_griddata(&grid_list, &no_grids, global_io.params->icfile_name);
   //  write_griddata(&grid_list, &no_grids, global_io.params->icfile_name);
   //  exit(0);
+  
+  // we need to set some parameters that are usually initialized during the reading of the simulation snapshot
+  global.a              = 1./(1.+global.z);
+  global.super_t        = calc_super_t(global.a);
+  global.t              = calc_t(global.a);
+  simu.no_vpart         = simu.no_part;
+  simu.no_species       = 1;
+  simu.a_initial        = 0.001;
+  simu.a_final          = 1.0;
+  create_timeline(simu.a_initial, simu.a_final, &simu.timeline);
+  simu.z_initial        = (double)1.0/simu.a_initial - (double)1.0;
+  simu.z_final          = (double)1.0/simu.a_final   - (double)1.0;
+  simu.multi_mass       = 0.0;
+  simu.min_weight       = 1.0;
+  simu.max_weight       = 1.0;
+  simu.t_unit           = 1.0/H0;
+  simu.np_limit         = TRUE;
+  simu.mean_dens        = (double) 1.0;
+  simu.double_precision = 0;
+  simu.mmfocus          = 0;
+  simu.hydro            = 0;
+  simu.magneto          = 0;
+  simu.SHIFT            = ((double)0.5000000/(double) simu.NGRID_DOM);
+  simu.super_t_initial  = calc_super_t(simu.a_initial);
+  simu.super_t_final    = calc_super_t(simu.a_final);
+  simu.t_initial        = calc_t(simu.a_initial);
+  simu.t_final          = calc_t(simu.a_final);
+  simu.gamma            = 0.0;
+  simu.omegab           = 0.0;
+  simu.omegaDM          = simu.omega0;
+  simu.FourPiG          = 1.5*simu.omega0;
+  simu.f_b              = 0.0;
+  simu.H_frac           = 0.0;
+  simu.T_init           = 0.0;
+  simu.B_init           = 0.0;
+  simu.e_init           = 0.0;
+  simu.no_halos         = 0;
+  simu.med_weight       = simu.max_weight;
+  simu.l_unit           = 0.0;
+  simu.m_unit           = 0.0;
+  simu.no_gas           = 0;
+  simu.no_stars         = 0;
+
 #endif
   
   
@@ -1078,7 +1071,7 @@ int main(int argc, char **argv)
                       if(lambda1 > LAMBDA_THRESHOLD && lambda2 < LAMBDA_THRESHOLD) Nsheets++;
                       if(lambda1 < LAMBDA_THRESHOLD)                               Nvoids++;
    
-#if defined(DWEB_MHD) || defined(PWEB_MHD)
+#if defined(DWEB) || defined(PWEB)
                       /* Now we use mhd nodes to make proper derivations */
                       for(i = 0; i <= 4; i++)
                         for(j = 0; j <= 4; j++)
@@ -1095,7 +1088,36 @@ int main(int argc, char **argv)
                       dambda1 = -1000.0;
                       dambda2 = -1000.0;
                       dambda3 = -1000.0;
-#ifdef DWEB_MHD
+#ifdef DWEB_AK // my own version
+                      /* Old version only using the direct neighbours only, no fancy derivatives... */
+                      dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
+                      dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
+                      dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
+                     
+                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
+                      dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
+                      dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                      dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
+                     
+                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
+//                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
+//                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
+//                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
+//                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
+//                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
+//                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
+                     
+                      dtensor[1][0] = dtensor[0][1];
+                      dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
+                      dtensor[2][1] = dtensor[1][2];
+                     
+                     // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                     for(i = 0; i <= 2; i++)
+                       for(j = 0; j <= 2; j++)
+                         dtensor[i][j] *= rho_fac;
+                     
+                      get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+#else // DWEB_AK
                       Wg = 0.0;
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
@@ -1136,37 +1158,8 @@ int main(int argc, char **argv)
 //                            dtensor[i][j] /= Wg;
                         get_axes(dtensor, &dambda1, &dambda2, &dambda3);
                       }  //if have neighbours for mhd_nodes
-#else // DWEB_MHD
-                      
-                       /* Old version only using the direct neighbours only, no fancy derivatives... */
-                       dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
-                       dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
-                       dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
-                      
-                       /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                       dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
-                       dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                       dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
-                      
-                       /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
-//                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
-//                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
-//                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
-//                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
-//                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
-//                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
-                      
-                       dtensor[1][0] = dtensor[0][1];
-                       dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
-                       dtensor[2][1] = dtensor[1][2];
-                      
-                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
-                      for(i = 0; i <= 2; i++)
-                        for(j = 0; j <= 2; j++)
-                          dtensor[i][j] *= rho_fac;
-                      
-                       get_axes(dtensor, &dambda1, &dambda2, &dambda3);
-#endif // DWEB_MHD
+
+#endif // DWEB_AK
 #endif // DWEB
                       
                       
@@ -1177,7 +1170,39 @@ int main(int argc, char **argv)
                       pambda1 = -1000.0;
                       pambda2 = -1000.0;
                       pambda3 = -1000.0;
-#ifdef PWEB_MHD // Weiguang's version using very fancy derivatives
+                      
+#ifdef PWEB_AK // my own version (not giving reasonable results!?)
+                      
+                      // Old version only using the direct neighbours, no fancy derivatives...(does not give reasonable results though!?)
+                       ptensor[0][0] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][1][0]->pot))/dx/dx;
+                       ptensor[1][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][0][1]->pot))/dy/dy; // this is 2nd order accurate
+                       ptensor[2][2] = ((tsc_nodes[2][1][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[0][1][1]->pot))/dz/dz;
+                      
+                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
+                       ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/twody - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/twody)/twodx;
+                       ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/twodz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                       ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/twodz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/twody)/twody;
+                      
+                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
+//                       ptensor[0][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[0][2][1]->pot) - (tsc_nodes[1][0][1]->pot - tsc_nodes[0][0][1]->pot) +
+//                                        (tsc_nodes[2][2][1]->pot - tsc_nodes[1][2][1]->pot) - (tsc_nodes[2][0][1]->pot - tsc_nodes[1][0][1]->pot))/dx/dy/4.0;
+//                       ptensor[0][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[0][1][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[0][1][0]->pot) +
+//                                        (tsc_nodes[2][1][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[2][1][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dz/4.0;
+//                       ptensor[1][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][0][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[1][0][0]->pot) +
+//                                        (tsc_nodes[1][2][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dy/4.0;
+                      
+                       ptensor[1][0] = ptensor[0][1];
+                       ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
+                       ptensor[2][1] = ptensor[1][2];
+
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          ptensor[i][j] *= pot_fac/Hz2;
+
+                      get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                      
+#else // PWEB_AK
                       Wg = 0.0;
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
@@ -1225,39 +1250,16 @@ int main(int argc, char **argv)
                         // the Hessian matrix should be symmetric:
                         //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
                         
+                        // the trace of ptensor[][] should be the density (the source term, cf. solve_gravity.c)
+//                        fprintf(stderr,"%g = %g ... ",
+//                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+//                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
+
                         get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                        
                       }  //if have neighbours for mhd_nodes
-#else // PWEB_MHD
-                      
-                      // Old version only using the direct neighbours, no fancy derivatives...(does not give reasonable results though!?)
-                       ptensor[0][0] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][1][0]->pot))/dx/dx;
-                       ptensor[1][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][0][1]->pot))/dy/dy; // this is 2nd order accurate
-                       ptensor[2][2] = ((tsc_nodes[2][1][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[0][1][1]->pot))/dz/dz;
-                      
-                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                       ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/twody - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/twody)/twodx;
-                       ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/twodz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                       ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/twodz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/twody)/twody;
-                      
-                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
-//                       ptensor[0][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[0][2][1]->pot) - (tsc_nodes[1][0][1]->pot - tsc_nodes[0][0][1]->pot) +
-//                                        (tsc_nodes[2][2][1]->pot - tsc_nodes[1][2][1]->pot) - (tsc_nodes[2][0][1]->pot - tsc_nodes[1][0][1]->pot))/dx/dy/4.0;
-//                       ptensor[0][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[0][1][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[0][1][0]->pot) +
-//                                        (tsc_nodes[2][1][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[2][1][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dz/4.0;
-//                       ptensor[1][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][0][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[1][0][0]->pot) +
-//                                        (tsc_nodes[1][2][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dy/4.0;
-                      
-                       ptensor[1][0] = ptensor[0][1];
-                       ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
-                       ptensor[2][1] = ptensor[1][2];
 
-                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
-                      for(i = 0; i <= 2; i++)
-                        for(j = 0; j <= 2; j++)
-                          ptensor[i][j] *= pot_fac/Hz2;
-
-                      get_axes(ptensor, &pambda1, &pambda2, &pambda3);
-#endif // PWEB_MHD
+#endif // PWEB_AK
 #endif // PWEB
                       
                       /* write information to output file */

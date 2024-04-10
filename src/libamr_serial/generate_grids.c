@@ -451,8 +451,7 @@ void read_griddata(gridls **grid_list, int *no_grids, char *filename)
   fread(&simu.omega0,  sizeof(double), 1, gridfile);
   fread(&simu.lambda0, sizeof(double), 1, gridfile);
   fread(&simu.pmass,   sizeof(double), 1, gridfile);
-  fread(&simu.no_part, sizeof(long unsigned), 1, gridfile);
-  
+  fread(&simu.no_part, sizeof(long unsigned), 1, gridfile);  
   
   /* loop over all nodes */
   for(cur_pquad=dom_grid->pquad; cur_pquad!=NULL; cur_pquad=cur_pquad->next)

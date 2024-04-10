@@ -13,9 +13,9 @@
  * Note, the Dweb and Pweb results are *not* written into the ASCII file
  *=============================================================================*/
 //#define DWEB
-//#define DWEB_MHD // Weiguang's way of calculating 2nd order (mixed) partial derivatives
+//#define DWEB_AK  // my own version using only 2nd order derivatives (not recommended)
 //#define PWEB
-//#define PWEB_MHD // Weiguang's way of calculating 2nd order (mixed) partial derivatives
+//#define PWEB_AK  // my own version using only 2nd order derivatives (not recommended)
 
 /*=============================================================================
  * here we switch on/off various features of Cweb (i.e. DEFINEFLAGS)
@@ -78,11 +78,11 @@
 #define BCASTHEADER                  // only one MPI task will read all the relevant header information and then broadcast
 //#define NCPUREADING_EQ_NFILES        // this should speed up I/O of multiple snapshot files, but only works for this condition
 
-#ifdef DWEB_MHD
+#ifdef DWEB_AK
 #define DWEB
 #endif
 
-#ifdef PWEB_MHD
+#ifdef PWEB_AK
 #define PWEB
 #endif
 
