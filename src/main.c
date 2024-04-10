@@ -66,6 +66,7 @@ int main(int argc, char **argv)
   partptr       cur_part;
   long          ipart, x, y, z, npart;
   double        dx, dy, dz;
+  double        twodx, twody, twodz;
   double        Vx, Vy, Vz;
   double        Vx_x2,Vx_x0, Vy_x2,Vy_x0, Vz_x2, Vz_x0;
   double        Vx_y2,Vx_y0, Vy_y2,Vy_y0, Vz_y2, Vz_y0;
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
   double        dVydx, dVydy, dVydz;
   double        dVzdx, dVzdy, dVzdz;
   double        meanV[NDIM],sumweight,weight;
-  double        x_fac, v_fac, phi_fac;
+  double        x_fac, v_fac, phi_fac, pot_fac, rho_fac;
   double        local_shear[3][3];
   double        vorticity[3];
   double        itensor[3][3];
@@ -878,6 +879,8 @@ int main(int argc, char **argv)
   x_fac   = simu.boxsize;
   v_fac   = simu.boxsize/simu.t_unit/global.a;
   phi_fac = pow2(H0);  //Grav * simu.pmass / (simu.boxsize * global.a);
+  pot_fac = pow2(H0*simu.boxsize);
+  rho_fac = simu.pmass / pow3(simu.boxsize);
 #ifdef HUBBLE_Z
   Hz      = calc_Hubble(global.a);
 #else
@@ -928,6 +931,7 @@ int main(int argc, char **argv)
     FWRITE_TMP_UINT64;
     tmp_float   = simu.boxsize;
     FWRITE_TMP_FLOAT;
+    // we could/should also add tags that indicate whether the file contains DWEB/PWEB or not...
 #endif
     
     fprintf(stderr,"Calculating Vweb on %8ld grid (writing results to %s) ... ",cur_grid->l1dim,outfile);
@@ -939,10 +943,13 @@ int main(int argc, char **argv)
 #endif
 
     /* for centred finite differences (in physical units) */
-    dx = 2.*cur_grid->spacing*x_fac;
-    dy = 2.*cur_grid->spacing*x_fac;
-    dz = 2.*cur_grid->spacing*x_fac;
-    
+    dx    = cur_grid->spacing*x_fac;
+    dy    = cur_grid->spacing*x_fac;
+    dz    = cur_grid->spacing*x_fac;
+    twodx = 2.0*dx;
+    twody = 2.0*dy;
+    twodz = 2.0*dz;
+
     Nknots           = 0;
     Nfilaments       = 0;
     Nsheets          = 0;
@@ -986,29 +993,12 @@ int main(int argc, char **argv)
                         for(k = 0; k <= 2; k++){
                           tsc_nodes[i][j][k]=NULL;
                         }
-#ifdef MHD_NODES
-                    get_MHDnodes(cur_grid, cur_pquad, z, y, x, mhd_nodes);
-                    tsc_nodes[0][1][1] = mhd_nodes[1][2][2];
-                    tsc_nodes[1][1][1] = mhd_nodes[2][2][2];
-                    tsc_nodes[2][1][1] = mhd_nodes[3][2][2];
-                    
-                    tsc_nodes[1][0][1] = mhd_nodes[2][1][2];
-                    tsc_nodes[1][1][1] = mhd_nodes[2][2][2];
-                    tsc_nodes[1][2][1] = mhd_nodes[2][3][2];
-                    
-                    tsc_nodes[1][1][0] = mhd_nodes[2][2][1];
-                    tsc_nodes[1][1][1] = mhd_nodes[2][2][2];
-                    tsc_nodes[1][1][2] = mhd_nodes[2][2][3];
-                    
-                    haveneighbours = test_mhd(mhd_nodes);
-#else
                     tsc_nodes[1][1][1] = cur_node;
                     get_TSCnodes(cur_grid, cur_pquad, icur_cquad, icur_nquad, tsc_nodes, &z, &y, &x);
                     
-                    haveneighbours = test_tsc(tsc_nodes);
-#endif
                     /* 3. only use nodes that have neighbours for the finite difference calculation of dVi/drj
                      *    -> otherwise ignore as it is a boundary cell on a refinement level */
+                    haveneighbours = test_tsc(tsc_nodes);
                     if(haveneighbours == TRUE)
                     {
                       
@@ -1035,17 +1025,17 @@ int main(int argc, char **argv)
                       Vz_z0 = tsc_nodes[0][1][1]->densV[Z]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
                       
                       /* finite differences (in physical units) */
-                      dVxdx = v_fac*(Vx_x2-Vx_x0)/dx;
-                      dVxdy = v_fac*(Vx_y2-Vx_y0)/dy;
-                      dVxdz = v_fac*(Vx_z2-Vx_z0)/dz;
+                      dVxdx = v_fac*(Vx_x2-Vx_x0)/twodx;
+                      dVxdy = v_fac*(Vx_y2-Vx_y0)/twody;
+                      dVxdz = v_fac*(Vx_z2-Vx_z0)/twodz;
                       
-                      dVydx = v_fac*(Vy_x2-Vy_x0)/dx;
-                      dVydy = v_fac*(Vy_y2-Vy_y0)/dy;
-                      dVydz = v_fac*(Vy_z2-Vy_z0)/dz;
+                      dVydx = v_fac*(Vy_x2-Vy_x0)/twodx;
+                      dVydy = v_fac*(Vy_y2-Vy_y0)/twody;
+                      dVydz = v_fac*(Vy_z2-Vy_z0)/twodz;
                       
-                      dVzdx = v_fac*(Vz_x2-Vz_x0)/dx;
-                      dVzdy = v_fac*(Vz_y2-Vz_y0)/dy;
-                      dVzdz = v_fac*(Vz_z2-Vz_z0)/dz;
+                      dVzdx = v_fac*(Vz_x2-Vz_x0)/twodx;
+                      dVzdy = v_fac*(Vz_y2-Vz_y0)/twody;
+                      dVzdz = v_fac*(Vz_z2-Vz_z0)/twodz;
                       // TODO: not sure about the correct direction/sign here [2]-[0] or [0]-[2] !?
                       
                       /* vorticity */
@@ -1098,14 +1088,14 @@ int main(int argc, char **argv)
                       get_MHDnodes(cur_grid, cur_pquad, z, y, x, mhd_nodes);
                       haveneighbours = test_mhd(mhd_nodes);
 #endif
-#ifdef DWEB
-#ifdef DWEB_MHD // this version is not functional! I have not debugged it, but the usage of x_fac, for instance, appears flawed; further, I do not understand the weighing and use of distance2
+#ifdef DWEB  // doese DWEB actually make sense at all!?!?!
                       for(i = 0; i <= 2; i++)
                         for(j = 0; j <= 2; j++)
                           dtensor[i][j] = 0;
                       dambda1 = -1000.0;
                       dambda2 = -1000.0;
                       dambda3 = -1000.0;
+#ifdef DWEB_MHD
                       Wg = 0.0;
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
@@ -1121,9 +1111,9 @@ int main(int argc, char **argv)
                         for(i = 1; i <= 3; i++)
                           for(j = 1; j <= 3; j++)
                             for (k = 1; k<=3; k++){
-                              dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / 2. / dx;
-                              dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / 2. / dy;
-                              dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / 2. / dz;
+                              dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
+                              dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
+                              dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
                             }
                         /* calculate the second order derivation*/
                         for(i = 0; i <= 2; i++)
@@ -1131,15 +1121,15 @@ int main(int argc, char **argv)
 //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
 //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
 //                            Wg += 1./distance2;
-                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / 2. / dx / distance2 * x_fac;  // d^2F/dx^2 x_fac -> physical
-                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / 2. / dy / distance2 * x_fac;  // d^2F/dy^2
-                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / 2. / dz / distance2 * x_fac;  // d^2F/dz^2
-                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / 2. / dy / distance2 * x_fac;  // d(dF/dx)/dy
-                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / 2. / dz / distance2 * x_fac;  // d(dF/dx)/dz
-                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / 2. / dx / distance2 * x_fac;  // d(dF/dy)/dx
-                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / 2. / dz / distance2 * x_fac;  // d(dF/dy)/dz
-                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / 2. / dx / distance2 * x_fac;  // d(dF/dz)/dx
-                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / 2. / dy / distance2 * x_fac;  // d(dF/dz)/dy
+                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
+                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
+                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
+                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
+                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
+                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
+                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
+                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
+                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
                           }
 //                        for(i = 0; i <= 2; i++)
 //                          for(j = 0; j <= 2; j++)
@@ -1154,9 +1144,9 @@ int main(int argc, char **argv)
                        dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
                       
                        /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                       dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/2.0/dy - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/2.0/dy)/2.0/dx;
-                       dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/2.0/dz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/2.0/dy)/2.0/dx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                       dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/2.0/dz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/2.0/dy)/2.0/dy;
+                       dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
+                       dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                       dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
                       
                        /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
 //                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
@@ -1167,19 +1157,27 @@ int main(int argc, char **argv)
 //                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
                       
                        dtensor[1][0] = dtensor[0][1];
-                       dtensor[2][0] = dtensor[0][2];
+                       dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
                        dtensor[2][1] = dtensor[1][2];
+                      
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          dtensor[i][j] *= rho_fac;
+                      
                        get_axes(dtensor, &dambda1, &dambda2, &dambda3);
 #endif // DWEB_MHD
 #endif // DWEB
+                      
+                      
 #ifdef PWEB
-#ifdef PWEB_MHD // AK: I have not tested this part, but Weiguang is heavily using it (but why is DWEB_MHD then not working!?)
                       for(i = 0; i <= 2; i++)
                         for(j = 0; j <= 2; j++)
                           ptensor[i][j] = 0;
                       pambda1 = -1000.0;
                       pambda2 = -1000.0;
                       pambda3 = -1000.0;
+#ifdef PWEB_MHD // Weiguang's version using very fancy derivatives
                       Wg = 0.0;
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
@@ -1195,9 +1193,9 @@ int main(int argc, char **argv)
                         for(i = 1; i <= 3; i++)
                           for(j = 1; j <= 3; j++)
                             for (k = 1; k<=3; k++){
-                              dFdx[i-1][j-1][k-1] = phi_fac * pow2(x_fac) * (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / dx; // pot in unit of grid which needs to * x_fac^2
-                              dFdy[i-1][j-1][k-1] = phi_fac * pow2(x_fac) * (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / dy; // dx,dy,dz with length of 2 grids are already in physical units!
-                              dFdz[i-1][j-1][k-1] = phi_fac * pow2(x_fac) * (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / dz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
+                              dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / twodx; // pot in unit of grid which needs to * x_fac^2
+                              dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / twody; // dx,dy,dz with length of 2 grids are already in physical units!
+                              dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / twodz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
                             }
                         /* calculate the second order derivation*/
                         for(i = 0; i <= 2; i++)
@@ -1205,32 +1203,41 @@ int main(int argc, char **argv)
 //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
 //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
 //                            Wg += 1./distance2;
-                            ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / dx / Hz2;  // d^2F/dx^2  Hz2 to be unitless
-                            ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / dz / Hz2;  // d^2F/dz^2
-                            ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / dy / Hz2;  // d(dF/dx)/dy
-                            ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / dz / Hz2;  // d(dF/dx)/dz
-                            ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / dy / Hz2;  // d^2F/dy^2
-                            ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / dx / Hz2;  // d(dF/dy)/dx
-                            ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / dz / Hz2;  // d(dF/dy)/dz
-                            ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / dx / Hz2;  // d(dF/dz)/dx
-                            ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / dy / Hz2;  // d(dF/dz)/dy
+                            ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;  // d^2F/dx^2
+                            ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;  // d^2F/dz^2
+                            ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;  // d(dF/dx)/dy
+                            ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;  // d(dF/dx)/dz
+                            ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;  // d^2F/dy^2
+                            ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;  // d(dF/dy)/dx
+                            ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;  // d(dF/dy)/dz
+                            ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;  // d(dF/dz)/dx
+                            ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;  // d(dF/dz)/dy
                           }
 //                        for(i = 0; i <= 2; i++)
 //                          for(j = 0; j <= 2; j++)
 //                            dtensor[i][j] /= Wg;
+
+                        // missing unit factor for potential, making tensor[][] dimensionless, too!?
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++)
+                            ptensor[i][j] *= pot_fac/Hz2;
+                        
+                        // the Hessian matrix should be symmetric:
+                        //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
+                        
                         get_axes(ptensor, &pambda1, &pambda2, &pambda3);
                       }  //if have neighbours for mhd_nodes
 #else // PWEB_MHD
                       
-                      // Old version only using the direct neighbours, no fancy derivatives...
+                      // Old version only using the direct neighbours, no fancy derivatives...(does not give reasonable results though!?)
                        ptensor[0][0] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][1][0]->pot))/dx/dx;
                        ptensor[1][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][0][1]->pot))/dy/dy; // this is 2nd order accurate
                        ptensor[2][2] = ((tsc_nodes[2][1][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[0][1][1]->pot))/dz/dz;
                       
                       /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                       ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/2.0/dy - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/2.0/dy)/2.0/dx;
-                       ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/2.0/dz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/2.0/dy)/2.0/dx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                       ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/2.0/dz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/2.0/dy)/2.0/dy;
+                       ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/twody - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/twody)/twodx;
+                       ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/twodz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                       ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/twodz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/twody)/twody;
                       
                       /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
 //                       ptensor[0][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[0][2][1]->pot) - (tsc_nodes[1][0][1]->pot - tsc_nodes[0][0][1]->pot) +
@@ -1239,10 +1246,17 @@ int main(int argc, char **argv)
 //                                        (tsc_nodes[2][1][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[2][1][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dz/4.0;
 //                       ptensor[1][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][0][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[1][0][0]->pot) +
 //                                        (tsc_nodes[1][2][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dy/4.0;
+                      
                        ptensor[1][0] = ptensor[0][1];
-                       ptensor[2][0] = ptensor[0][2];
+                       ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
                        ptensor[2][1] = ptensor[1][2];
-                       get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          ptensor[i][j] *= pot_fac/Hz2;
+
+                      get_axes(ptensor, &pambda1, &pambda2, &pambda3);
 #endif // PWEB_MHD
 #endif // PWEB
                       

@@ -475,12 +475,12 @@ local_printStruct(FILE *f, const io_parameter_t params)
     fprintf(f, "ic_filename       = %s\n", params->icfile_name);
     fprintf(f, "ic_filetype       = %i\n", (int)(params->ic_filetype));
     fprintf(f, "outfile_prefix    = %s\n", params->outfile_prefix);
-	  fprintf(f, "LgridDomain       = %i\n", params->NGRID_DOM);
-	  fprintf(f, "LgridMax          = %i\n", params->NGRID_MAX);
+	  fprintf(f, "Lgrid             = %i\n", params->NGRID_DOM);
+//	  fprintf(f, "LgridMax          = %i\n", params->NGRID_MAX);
 //    fprintf(f, "NminPerHalo       = %i\n", params->AHF_MINPART);
-		fprintf(f, "VescTune          = %g\n", params->RSMOOTH);
-		fprintf(f, "NperDomCell       = %g\n", params->Nth_dom);
-		fprintf(f, "NperRefCell       = %g\n", params->Nth_ref);
+//		fprintf(f, "VescTune          = %g\n", params->RSMOOTH);
+//		fprintf(f, "NperDomCell       = %g\n", params->Nth_dom);
+//		fprintf(f, "NperRefCell       = %g\n", params->Nth_ref);
 //    fprintf(f, "RhoVir            = %i\n", params->UseRhoBack);
 //    fprintf(f, "Dvir              = %g\n", params->UserDvir);
 //    fprintf(f, "MaxGatherRad      = %g Mpc/h\n", params->MaxGatherRad);
