@@ -28,7 +28,7 @@ def read_CwebASCII(filename):
 #         https://docs.python.org/3/library/struct.html#format-characters
 #   for format options
 #==============================================================================
-def read_Cweb(filename):
+def read_Cweb(filename, PWEB=False):
     print('o read_Cweb():')
     print('   reading',filename)
     with open(filename, "rb") as file:
@@ -54,7 +54,10 @@ def read_Cweb(filename):
         # read the actual Cweb[] matrix
         #-------------------------------
         Cweb = np.fromfile(file, dtype=np.float32)
-        Cweb = np.reshape(Cweb,(Nnodes,22))               # 22 values per node
+        if (PWEB==False):
+            Cweb = np.reshape(Cweb,(Nnodes,22))           # 22 values per node
+        else:
+            Cweb = np.reshape(Cweb,(Nnodes,34))           # 34 values per node
           
         # how to access ==> Cweb[inode,ivalue]
         
@@ -65,7 +68,7 @@ def read_Cweb(filename):
 #==============================================================================
 # Weiguang's routine to read a Cweb binary file
 #==============================================================================
-def readCweb(fileall, endian=None, UonGrid=None, DWEB=None, quiet=None, selected=None):
+def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected=None):
     """
     readCweb(fileall,endian=None,UonGrid=None):
     read Cweb binary out puts
@@ -94,7 +97,7 @@ def readCweb(fileall, endian=None, UonGrid=None, DWEB=None, quiet=None, selected
         float lambda2;11
         float lambda3;12
         float local_shear[3][3];13:22
-    #ifdef DWEB
+    #ifdef PWEB
         float lambda1;22
         float lambda2;23
         float lambda3;24
@@ -106,14 +109,17 @@ def readCweb(fileall, endian=None, UonGrid=None, DWEB=None, quiet=None, selected
     } Cweb_t;
     """
 
-    print('o readCweb():')
+    if PWEB is None:
+        print('o readCweb():')
+    else:
+        print('o readCweb(PWEB=True):')
     print('   reading',fileall)
 
 
     if endian is None:
         endian = '='
     dims = 22
-    if DWEB:
+    if PWEB:
         dims += 12
     if UonGrid:
         dims += 1

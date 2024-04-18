@@ -10,7 +10,8 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import struct
-from   read_Cweb import readCweb # this is Weiguang's most flexible read routine
+from   read_Cweb import readCweb  # this is Weiguang's most flexible read routine
+from   read_Cweb import read_Cweb # AK's routine to Cweb
 
 #==============================================================================
 #                            MAIN
@@ -18,10 +19,7 @@ from   read_Cweb import readCweb # this is Weiguang's most flexible read routine
 
 # just look at a single file
 #--------------------------------------------------
-# Cwebfile = '/Users/aknebe/Office/Source/Analysis/Cweb/GadgetX_NewMDCLUSTER_0001.snap_128.00064.Rs=35.00.Cweb-ascii'
-# Cweb = read_CwebASCII(Cwebfile)
-
-Cwebfile = '/Users/aknebe/Office/Source/Analysis/Cweb/GadgetX_NewMDCLUSTER_0001.snap_128.00064.Rs=35.00.Cweb'
+Cwebfile = '//Users/aknebe/Office/Analysis/COLA_CW/lcdm_z0p000.00512.Rs=15.00.Cweb'
 Cweb     = readCweb(Cwebfile)
 
 x     = Cweb[:,0]
