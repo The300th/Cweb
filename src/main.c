@@ -1068,8 +1068,12 @@ int main(int argc, char **argv)
                         
 #ifdef IGNORE_JACOBI_NONCONVERGENCE
                         if(converged == 0){
-                            fprintf(stderr," ---> at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                            fprintf(stderr," ---> (Vweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
                                     x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                            lambda1 = lambda2 = lambda3 = -3.1415;
+                            itensor[X][X] = itensor[X][Y] = itensor[X][Z] = -3.1415;
+                            itensor[X][Y] = itensor[Y][Y] = itensor[Y][Z] = -3.1415;
+                            itensor[X][Z] = itensor[Y][Z] = itensor[Z][Z] = -3.1415;
                         }
 #endif
                       
@@ -1130,44 +1134,57 @@ int main(int argc, char **argv)
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
                       {
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++)
-                            for(k = 0; k <= 2; k++){
-                              dFdx[i][j][k]=0;
-                              dFdy[i][j][k]=0;
-                              dFdz[i][j][k]=0;
+                         for(i = 0; i <= 2; i++)
+                            for(j = 0; j <= 2; j++)
+                               for(k = 0; k <= 2; k++){
+                                  dFdx[i][j][k]=0;
+                                  dFdy[i][j][k]=0;
+                                  dFdz[i][j][k]=0;
+                               }
+                         /* calculate the first order derivation*/
+                         for(i = 1; i <= 3; i++)
+                            for(j = 1; j <= 3; j++)
+                               for (k = 1; k<=3; k++){
+                                  dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
+                                  dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
+                                  dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
+                               }
+                         /* calculate the second order derivation*/
+                         for(i = 0; i <= 2; i++)
+                            for(j = 0; j <= 2; j++){
+                               //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
+                               //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
+                               //                            Wg += 1./distance2;
+                               dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
+                               dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
+                               dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
+                               dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
+                               dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
+                               dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
+                               dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
+                               dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
+                               dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
                             }
-                        /* calculate the first order derivation*/
-                        for(i = 1; i <= 3; i++)
-                          for(j = 1; j <= 3; j++)
-                            for (k = 1; k<=3; k++){
-                              dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
-                              dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
-                              dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
-                            }
-                        /* calculate the second order derivation*/
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++){
-//                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
-//                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
-//                            Wg += 1./distance2;
-                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
-                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
-                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
-                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
-                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
-                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
-                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
-                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
-                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
-                          }
-//                        for(i = 0; i <= 2; i++)
-//                          for(j = 0; j <= 2; j++)
-//                            dtensor[i][j] /= Wg;
-                          converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                         //                        for(i = 0; i <= 2; i++)
+                         //                          for(j = 0; j <= 2; j++)
+                         //                            dtensor[i][j] /= Wg;
+                         converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                         
                       }  //if have neighbours for mhd_nodes
 
 #endif // DWEB_AK
+
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+                    if(converged == 0){
+                       fprintf(stderr," ---> (Dweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                               x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                       dambda1 = dambda2 = dambda3 = -3.1415;
+                       dtensor[X][X] = dtensor[X][Y] = dtensor[X][Z] = -3.1415;
+                       dtensor[X][Y] = dtensor[Y][Y] = dtensor[Y][Z] = -3.1415;
+                       dtensor[X][Z] = dtensor[Y][Z] = dtensor[Z][Z] = -3.1415;
+                    }
+#endif
+
 #endif // DWEB
                       
                       
@@ -1215,59 +1232,70 @@ int main(int argc, char **argv)
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
                       {
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++)
-                            for(k = 0; k <= 2; k++){
-                              dFdx[i][j][k]=0;
-                              dFdy[i][j][k]=0;
-                              dFdz[i][j][k]=0;
+                         for(i = 0; i <= 2; i++)
+                            for(j = 0; j <= 2; j++)
+                               for(k = 0; k <= 2; k++){
+                                  dFdx[i][j][k]=0;
+                                  dFdy[i][j][k]=0;
+                                  dFdz[i][j][k]=0;
+                               }
+                         /* calculate the first order derivation*/
+                         for(i = 1; i <= 3; i++)
+                            for(j = 1; j <= 3; j++)
+                               for (k = 1; k<=3; k++){
+                                  dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / twodx; // pot in unit of grid which needs to * x_fac^2
+                                  dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / twody; // dx,dy,dz with length of 2 grids are already in physical units!
+                                  dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / twodz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
+                               }
+                         /* calculate the second order derivation*/
+                         for(i = 0; i <= 2; i++)
+                            for(j = 0; j <= 2; j++){
+                               //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
+                               //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
+                               //                            Wg += 1./distance2;
+                               ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;  // d^2F/dx^2
+                               ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;  // d^2F/dz^2
+                               ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;  // d(dF/dx)/dy
+                               ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;  // d(dF/dx)/dz
+                               ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;  // d^2F/dy^2
+                               ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;  // d(dF/dy)/dx
+                               ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;  // d(dF/dy)/dz
+                               ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;  // d(dF/dz)/dx
+                               ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;  // d(dF/dz)/dy
                             }
-                        /* calculate the first order derivation*/
-                        for(i = 1; i <= 3; i++)
-                          for(j = 1; j <= 3; j++)
-                            for (k = 1; k<=3; k++){
-                              dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / twodx; // pot in unit of grid which needs to * x_fac^2
-                              dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / twody; // dx,dy,dz with length of 2 grids are already in physical units!
-                              dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / twodz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
-                            }
-                        /* calculate the second order derivation*/
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++){
-//                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
-//                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
-//                            Wg += 1./distance2;
-                            ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;  // d^2F/dx^2
-                            ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;  // d^2F/dz^2
-                            ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;  // d(dF/dx)/dy
-                            ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;  // d(dF/dx)/dz
-                            ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;  // d^2F/dy^2
-                            ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;  // d(dF/dy)/dx
-                            ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;  // d(dF/dy)/dz
-                            ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;  // d(dF/dz)/dx
-                            ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;  // d(dF/dz)/dy
-                          }
-//                        for(i = 0; i <= 2; i++)
-//                          for(j = 0; j <= 2; j++)
-//                            dtensor[i][j] /= Wg;
-
-                        // missing unit factor for potential, making tensor[][] dimensionless, too!?
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++)
-                            ptensor[i][j] *= pot_fac/Hz2;
-                        
-                        // the Hessian matrix should be symmetric:
-                        //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
-                        
-                        // the trace of ptensor[][] should be the density (the source term, cf. solve_gravity.c)
-//                        fprintf(stderr,"%g = %g ... ",
-//                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
-//                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
-
-                          converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
-                        
+                         //                        for(i = 0; i <= 2; i++)
+                         //                          for(j = 0; j <= 2; j++)
+                         //                            dtensor[i][j] /= Wg;
+                         
+                         // missing unit factor for potential, making tensor[][] dimensionless, too!?
+                         for(i = 0; i <= 2; i++)
+                            for(j = 0; j <= 2; j++)
+                               ptensor[i][j] *= pot_fac/Hz2;
+                         
+                         // the Hessian matrix should be symmetric:
+                         //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
+                         
+                         // the trace of ptensor[][] should be the density (the source term, cf. solve_gravity.c)
+                         //                        fprintf(stderr,"%g = %g ... ",
+                         //                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                         //                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
+                         
+                         converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
                       }  //if have neighbours for mhd_nodes
 
 #endif // PWEB_AK
+
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+                         if(converged == 0){
+                            fprintf(stderr," ---> (Pweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                    x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                            pambda1 = pambda2 = pambda3 = -3.1415;
+                            ptensor[X][X] = ptensor[X][Y] = ptensor[X][Z] = -3.1415;
+                            ptensor[X][Y] = ptensor[Y][Y] = ptensor[Y][Z] = -3.1415;
+                            ptensor[X][Z] = ptensor[Y][Z] = ptensor[Z][Z] = -3.1415;
+                         }
+#endif
+
 #endif // PWEB
                       
                       /* write information to output file */
@@ -1385,6 +1413,8 @@ int main(int argc, char **argv)
                       FWRITE_TMP_FLOAT;
 #endif
 #ifdef PWEB
+                      tmp_float = cur_node->pot*pot_fac;
+                      FWRITE_TMP_FLOAT;
                       tmp_float = pambda1;
                       FWRITE_TMP_FLOAT;
                       tmp_float = pambda2;

@@ -32,6 +32,8 @@ Makefile.config:
 - DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing)
 ---> reading/writing grid data has not been tested yet for the MPI version
 
+GENERAL SUGGESTION: compile Cweb_WRITEGRIDATA and Cweb_READGRIDDATA
+
 - you can make the following codes:
 	$ make Cweb
 	$ make Cweb2ascii
@@ -42,12 +44,7 @@ Makefile.config:
 
 Cweb.input-example:
 -------------------
-- you should primarily be concerned with
-	- LGridDomain
-	- LGridMax
-	-> it is strongly suggested to only run the code with LGridDomain=LGridMax, ignoring all adaptive capabilities
-
-- if LGridDomain=LGridMax, then NperDomCell and NperRefCell are meaningless and can be set to whatever you like
+- Lgrid is the grid used for the calculation of all fields, it needs to be a power of 2 because of the FFTs involved in the smoothing (if you do not smooth, it can be any number)
 
 - Rsmooth will smooth the density fields on this scale as given in [Mpc/h]; but note, if that scale is smaller than twice the grid spacing, the scaling will not take place as it is meaningless
 
