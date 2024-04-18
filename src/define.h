@@ -48,24 +48,13 @@
 
 //#define BYTESWAP             /* forces a byteswap of the input file                                                */
 
-//#define IGNORE_JACOBI_NONCONVERGENCE // even if the Jacobi method to diagonalize a tensor does not converg, continue with the code...
-
-
-
-
-
-
-
-
-
+//#define IGNORE_JACOBI_NONCONVERGENCE // even if the Jacobi method to diagonalize a tensor does not converge, continue with the code...
 
 
 /*---------------------------------------------------
  *                  STANDARD
  *         (best to not touch these!)
  *--------------------------------------------------*/
-//#define TSC_SMOOTHING        /* smooth density and velocity fields on TSC nodes                                   */
-//#define MHD_SMOOTHING        /* smooth density and velocity fields on MHD nodes                                   */
 #define PERIODIC             /* use periodic boundary conditions                                                  */
 #ifndef VERBOSE
 #define VERBOSE              /* let the user know what's going on                                                 */

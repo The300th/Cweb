@@ -1569,11 +1569,6 @@ void write_parameterfile()
 #else
          fprintf(fpparam,"HUBBLEZ                   \t\t0\n");
 #endif
-#ifdef TSC_SMOOTHING
-        fprintf(fpparam,"TSC_SMOOTHING              \t\t1\n");
-#else
-        fprintf(fpparam,"TSC_SMOOTHING              \t\t0\n");
-#endif
 #ifdef DWEB
         fprintf(fpparam,"DWEB                       \t\t1\n");
 #else
@@ -1593,11 +1588,6 @@ void write_parameterfile()
         fprintf(fpparam,"PWEB_AK                    \t\t1\n");
 #else
         fprintf(fpparam,"PWEB_AK                    \t\t0\n");
-#endif
-#ifdef MHD_SMOOTHING
-        fprintf(fpparam,"MHD_SMOOTHING              \t\t1\n");
-#else
-        fprintf(fpparam,"MHD_SMOOTHING              \t\t0\n");
 #endif
 #ifdef WITH_MPI
         fprintf(fpparam,"WITH_MPI                   \t\t1\n");
