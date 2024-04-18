@@ -114,12 +114,25 @@ double f1mod(double x, double y)
 /*==============================================================================
 *  get eigenvalues of inertia tensor
 *==============================================================================*/
-void get_axes(double itensor[3][3], double *axis1, double *axis2, double *axis3)
+int get_axes(double itensor[3][3], double *axis1, double *axis2, double *axis3)
 {
-   int           n, i, j, nrot;
+   int           n, i, j, nrot, converged=1;
    unsigned long idx[4];
    double        a[4][4], d[4], v[4][4], tmp[4];
    
+    
+    // check if the Jacobi method will converge (we check for 'diagonally dominat')
+//    tmp[X] = fabs(itensor[X][Y])+fabs(itensor[X][Z]);
+//    tmp[Y] = fabs(itensor[Y][X])+fabs(itensor[Y][Z]);
+//    tmp[Z] = fabs(itensor[Z][X])+fabs(itensor[Z][Y]);
+//
+//    if((fabs(itensor[X][X])<tmp[X]) || (fabs(itensor[Z][Z])<tmp[Z]) || (fabs(itensor[Z][Z])<tmp[Z])) {
+//        fprintf(stderr,"\n the Jacobi method will not converge for the current tensor:\n");
+//        fprintf(stderr,"%g %g %g\n",itensor[X][X],itensor[X][Y],itensor[X][Z]);
+//        fprintf(stderr,"%g %g %g\n",itensor[Y][X],itensor[Y][Y],itensor[Y][Z]);
+//        fprintf(stderr,"%g %g %g\n",itensor[Z][X],itensor[Z][Y],itensor[Z][Z]);
+//    }
+    
    n = NDIM;
    
    for(i=0; i<4; i++)
@@ -136,7 +149,7 @@ void get_axes(double itensor[3][3], double *axis1, double *axis2, double *axis3)
    a[2][3] = itensor[1][2];
    a[3][3] = itensor[2][2];
    
-   jacobi(a, n, d, v, &nrot);
+   converged = jacobi(a, n, d, v, &nrot);
    
    for(i=1; i<=n; i++)
       tmp[i] = d[i];
@@ -157,6 +170,8 @@ void get_axes(double itensor[3][3], double *axis1, double *axis2, double *axis3)
    itensor[0][2] = v[1][idx[1]];
    itensor[1][2] = v[2][idx[1]];
    itensor[2][2] = v[3][idx[1]];
+    
+    return(converged);
 }
 
 /*==============================================================================
@@ -1613,6 +1628,11 @@ void write_parameterfile()
         fprintf(fpparam,"DOUBLE                     \t\t1\n");
 #else
         fprintf(fpparam,"DOUBLE                     \t\t0\n");
+#endif
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+        fprintf(fpparam,"IGNORE_JACOBI_NONCONVERGENCE                     \t\t1\n");
+#else
+        fprintf(fpparam,"IGNORE_JACOBI_NONCONVERGENCE                     \t\t0\n");
 #endif
         fprintf(fpparam,"\n");
         fprintf(fpparam,"grid related flags:\n");

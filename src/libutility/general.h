@@ -44,7 +44,7 @@ double  rtbis              (double (*func)(double,double,double), double x1, dou
 void    spline             (double x[], double y[], int n, double yp1, double ypn, double y2[]);
 void    splint             (double xa[], double ya[], double y2a[], int n, double x, double *y);
 void    polint             (double xa[], double ya[], int n, double x, double *y, double *dy);
-void    jacobi             (double a[4][4], int n, double d[], double v[4][4], int *nrot);
+int     jacobi             (double a[4][4], int n, double d[], double v[4][4], int *nrot);
 float   ran3               (int *idum);
 void    indexx             (unsigned long n, double arr[], unsigned long indx[]);
 int    *ivector            (long nl, long nh);

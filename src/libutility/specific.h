@@ -20,7 +20,7 @@ void    ic_unit_conversion   ();
 double  init_header_masses   ();
 void    binning_parameter    (HALO halo, int *nbins, double *dist_min, double *dist_max);
 void    get_c2fslope         (double func[3][3][3], double slope[3]);
-void    get_axes             (double itensor[3][3], double *axis1, double *axis2, double *axis3);
+int     get_axes             (double itensor[3][3], double *axis1, double *axis2, double *axis3);
 int     idx_inv              (long unsigned *idx, int numHalos, int j);
 double  f1mod                (double x, double y);
 double  Laplace_pot          (nptr tsc_nodes[3][3][3], double spacing);

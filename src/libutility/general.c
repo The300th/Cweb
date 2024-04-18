@@ -1088,7 +1088,7 @@ void indexx(unsigned long n, double arr[], unsigned long indx[])
 #define ROTATE(a,i,j,k,l) g=a[i][j];h=a[k][l];a[i][j]=g-s*(h+g*tau);	\
 a[k][l]=h+s*(g-h*tau);
 
-void jacobi(double a[4][4], int n, double d[], double v[4][4], int *nrot)
+int jacobi(double a[4][4], int n, double d[], double v[4][4], int *nrot)
 {
   int    j,iq,ip,i;
   double tresh,theta,tau,t,sm,s,h,g,c,*b,*z;
@@ -1113,7 +1113,7 @@ void jacobi(double a[4][4], int n, double d[], double v[4][4], int *nrot)
     if (sm == 0.0) {
       free_vector(z,1,n);
       free_vector(b,1,n);
-      return;
+      return(1);
     }
     if (i < 4)
       tresh=0.2*sm/(n*n);
@@ -1122,8 +1122,7 @@ void jacobi(double a[4][4], int n, double d[], double v[4][4], int *nrot)
     for (ip=1;ip<=n-1;ip++) {
       for (iq=ip+1;iq<=n;iq++) {
         g=100.0*fabs(a[ip][iq]);
-        if (i > 4 && (double)(fabs(d[ip])+g) == (double)fabs(d[ip])
-            && (double)(fabs(d[iq])+g) == (double)fabs(d[iq]))
+        if (i > 4 && (double)(fabs(d[ip])+g) == (double)fabs(d[ip]) && (double)(fabs(d[iq])+g) == (double)fabs(d[iq]))
           a[ip][iq]=0.0;
         else if (fabs(a[ip][iq]) > tresh) {
           h=d[iq]-d[ip];
@@ -1165,7 +1164,15 @@ void jacobi(double a[4][4], int n, double d[], double v[4][4], int *nrot)
       z[ip]=0.0;
     }
   }
+    fprintf(stderr,"\njacobi() has not converged for this tensor:\n");
+    fprintf(stderr,"%g %g %g\n",a[1][1],a[1][2],a[1][3]);
+    fprintf(stderr,"%g %g %g\n",a[2][1],a[2][2],a[2][3]);
+    fprintf(stderr,"%g %g %g\n",a[3][1],a[3][2],a[3][3]);
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+    return(0);
+#else
   nrerror("Too many iterations in routine jacobi");
+#endif
 }
 
 void spline(double x[], double y[], int n, double yp1, double ypn, double y2[])

@@ -79,6 +79,7 @@ int main(int argc, char **argv)
   double        local_shear[3][3];
   double        vorticity[3];
   double        itensor[3][3];
+    int         converged;
   double        lambda1, lambda2, lambda3;
   long          i, j, k;
   double        Wg, distance2;
@@ -1062,8 +1063,15 @@ int main(int argc, char **argv)
                       lambda1 = -1000.0;
                       lambda2 = -1000.0;
                       lambda3 = -1000.0;
-                      get_axes(itensor, &lambda1, &lambda2, &lambda3);
+                      converged = get_axes(itensor, &lambda1, &lambda2, &lambda3);
                       // NOTE: the eigenvalues and -vectors are ordered upon return axis1>axis2>axis3
+                        
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+                        if(converged == 0){
+                            fprintf(stderr," ---> at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                    x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                        }
+#endif
                       
                       /* count web elements */
                       if(lambda3 > LAMBDA_THRESHOLD)                               Nknots++;
@@ -1116,7 +1124,7 @@ int main(int argc, char **argv)
                        for(j = 0; j <= 2; j++)
                          dtensor[i][j] *= rho_fac;
                      
-                      get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                    converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
 #else // DWEB_AK
                       Wg = 0.0;
                       
@@ -1156,7 +1164,7 @@ int main(int argc, char **argv)
 //                        for(i = 0; i <= 2; i++)
 //                          for(j = 0; j <= 2; j++)
 //                            dtensor[i][j] /= Wg;
-                        get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                          converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
                       }  //if have neighbours for mhd_nodes
 
 #endif // DWEB_AK
@@ -1200,7 +1208,7 @@ int main(int argc, char **argv)
                         for(j = 0; j <= 2; j++)
                           ptensor[i][j] *= pot_fac/Hz2;
 
-                      get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                        converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
                       
 #else // PWEB_AK
                       Wg = 0.0;
@@ -1255,7 +1263,7 @@ int main(int argc, char **argv)
 //                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
 //                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
 
-                        get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                          converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
                         
                       }  //if have neighbours for mhd_nodes
 
@@ -1578,6 +1586,7 @@ int main(int argc, char **argv)
     
     fclose(fpout);
     
+#ifdef LAMBDA_TH
 #ifdef WITH_MPI
     // sum up all individual web counts
     //    MPI_Reduce(&Nknots,     &Nknots_all,     8, MPI_BYTE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -1588,29 +1597,22 @@ int main(int argc, char **argv)
     MPI_Reduce(&Nfilaments, &Nfilaments_all, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&Nsheets,    &Nsheets_all,    1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&Nvoids,     &Nvoids_all,     1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    
-#ifdef LAMBDA_TH
-    /* dump filling fractions */
-    if(global_mpi.rank == 0) {
-      fprintf(stderr,"\nVolume Filling Fractions: (grid=%ld, LambdaThreshold=%g)\n",cur_grid->l1dim,LAMBDA_THRESHOLD);
-      fprintf(stderr,"=========================\n");
-      fprintf(stderr,"knots     = %g\n",(double)Nknots_all/(double)pow3(cur_grid->l1dim));
-      fprintf(stderr,"filaments = %g\n",(double)Nfilaments_all/(double)pow3(cur_grid->l1dim));
-      fprintf(stderr,"sheets    = %g\n",(double)Nsheets_all/(double)pow3(cur_grid->l1dim));
-      fprintf(stderr,"voids     = %g\n",(double)Nvoids_all/(double)pow3(cur_grid->l1dim));
-    }
 #endif
-#else
-#ifdef LAMBDA_TH
-    /* dump filling fractions */
-    fprintf(stderr,"\nVolume Filling Fractions: (grid=%ld, LambdaThreshold=%g)\n",cur_grid->l1dim,LAMBDA_THRESHOLD);
-    fprintf(stderr,"=========================\n");
-    fprintf(stderr,"knots     = %g\n",(double)Nknots/(double)pow3(cur_grid->l1dim));
-    fprintf(stderr,"filaments = %g\n",(double)Nfilaments/(double)pow3(cur_grid->l1dim));
-    fprintf(stderr,"sheets    = %g\n",(double)Nsheets/(double)pow3(cur_grid->l1dim));
-    fprintf(stderr,"voids     = %g\n",(double)Nvoids/(double)pow3(cur_grid->l1dim));
+
+      /* dump filling fractions */
+#ifdef WITH_MPI
+      if(global_mpi.rank == 0)
 #endif
-#endif
+      {
+          fprintf(stderr,"\nVolume Filling Fractions: (grid=%ld, LambdaThreshold=%g)\n",cur_grid->l1dim,LAMBDA_THRESHOLD);
+          fprintf(stderr,"=========================\n");
+          fprintf(stderr,"knots     = %g\n",(double)Nknots/(double)pow3(cur_grid->l1dim));
+          fprintf(stderr,"filaments = %g\n",(double)Nfilaments/(double)pow3(cur_grid->l1dim));
+          fprintf(stderr,"sheets    = %g\n",(double)Nsheets/(double)pow3(cur_grid->l1dim));
+          fprintf(stderr,"voids     = %g\n",(double)Nvoids/(double)pow3(cur_grid->l1dim));
+      }
+#endif //LAMBDA_TH
+
   } // for(cur_grid)
   ahf.time += time(NULL);
   

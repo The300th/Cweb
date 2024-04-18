@@ -48,7 +48,7 @@
 
 //#define BYTESWAP             /* forces a byteswap of the input file                                                */
 
-
+//#define IGNORE_JACOBI_NONCONVERGENCE // even if the Jacobi method to diagonalize a tensor does not converg, continue with the code...
 
 
 
