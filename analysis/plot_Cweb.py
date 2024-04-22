@@ -13,14 +13,22 @@ import struct
 from   read_Cweb import readCweb  # this is Weiguang's most flexible read routine
 from   read_Cweb import read_Cweb # AK's routine to Cweb
 
+def Randomsample_data(data, N):
+
+    rand_pos     = np.random.randint(0,len(data),N)
+    data_sampled = data[rand_pos]
+
+    return data_sampled
+
+
 #==============================================================================
 #                            MAIN
 #==============================================================================
 
 # just look at a single file
 #--------------------------------------------------
-Cwebfile = '//Users/aknebe/Office/Analysis/COLA_CW/lcdm_z0p000.00512.Rs=15.00.Cweb'
-Cweb     = readCweb(Cwebfile)
+Cwebfile = '//Users/aknebe/Office/Analysis/COLA_CW/lcdm_z0p000.00128.Rs=5.00.Cweb'
+Cweb     = readCweb(Cwebfile,PWEB=True)
 
 x     = Cweb[:,0]
 y     = Cweb[:,1]
@@ -30,9 +38,17 @@ l1    = Cweb[:,10]
 l2    = Cweb[:,11]
 l3    = Cweb[:,12]
 
+# for large grids it makes more sense to use a subset of the data for visualization
+# rand_pos = np.random.randint(0,len(x),128**3)
+# x        = x[rand_pos]
+# y        = y[rand_pos]
+# z        = z[rand_pos]
+# delta    = delta[rand_pos]
+# l1       = l1[rand_pos]
+
 fig = plt.figure(figsize=(20,16))
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(x, y, z, c=l1/max(l1))
+ax.scatter(x, y, z, c=delta/max(delta))
 plt.show()
 
 '''

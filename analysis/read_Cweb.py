@@ -57,7 +57,7 @@ def read_Cweb(filename, PWEB=False):
         if (PWEB==False):
             Cweb = np.reshape(Cweb,(Nnodes,22))           # 22 values per node
         else:
-            Cweb = np.reshape(Cweb,(Nnodes,34))           # 34 values per node
+            Cweb = np.reshape(Cweb,(Nnodes,35))           # 35 values per node
           
         # how to access ==> Cweb[inode,ivalue]
         
@@ -120,7 +120,7 @@ def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected
         endian = '='
     dims = 22
     if PWEB:
-        dims += 12
+        dims += 13
     if UonGrid:
         dims += 1
 
