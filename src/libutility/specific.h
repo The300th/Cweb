@@ -32,6 +32,7 @@ double  calc_cNFW            (double V2_max, double V2_vir);
 extern int
 cmp_sfckey_part(const void *p1, const void *p2);
 int     check_for_MPIboundary(double x, double y, double z);
+int     check_for_zerodens   (nptr tsc_nodes[3][3][3], double dens_threshold);
 
 #define WRITEAHFLOGO(fx)  \
 fprintf(fx,"=======================================================================\n");\

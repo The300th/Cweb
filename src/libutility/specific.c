@@ -1823,6 +1823,30 @@ double calc_cNFW(double V2_max, double V2_vir)
   return(c);
 }
 
+/*==============================================================================
+ * check whether the cells of interest have (dens+mean_dens)>dens_threshold
+ *==============================================================================*/
+int check_for_zerodens(nptr tsc_nodes[3][3][3], double dens_threshold)
+{
+   int i,j,k;
+   double dthres = dens_threshold-simu.mean_dens;
+   
+   // test for zerodens
+   if(tsc_nodes[1][1][1]->dens > dthres &&
+      tsc_nodes[1][1][2]->dens > dthres &&
+      tsc_nodes[1][1][0]->dens > dthres &&
+      tsc_nodes[1][2][1]->dens > dthres &&
+      tsc_nodes[1][0][1]->dens > dthres &&
+      tsc_nodes[2][1][1]->dens > dthres &&
+      tsc_nodes[0][1][1]->dens > dthres   ) {
+      return(1);
+   }
+   else {
+      return(0);
+   }
+
+}
+
 #ifdef WITH_MPI
 /*==============================================================================
  * check whether the provided coordinates lie within the MPI boundary
