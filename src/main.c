@@ -1446,7 +1446,7 @@ int main(int argc, char **argv)
 #endif
 #endif
                     } // if(haveneighbours)
-                  } // if(cur_node->ll)
+                  } // if(fabs(cur_node->dens+simu.mean_dens) > CWEB_DENSTHRESHOLD)
                   else
                   {
                     /* count and write empty cells as void */
@@ -1481,13 +1481,13 @@ int main(int argc, char **argv)
                             tmp_x,
                             tmp_y,
                             tmp_z,
-                            cur_node->dens+simu.mean_dens, // density in terms of background density
-                            cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac,
-                            cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac, // velocity in cell
-                            cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac,
-                            vorticity[X],
-                            vorticity[Y], // already in the correct units
-                            vorticity[Z],
+                            cur_node->dens+simu.mean_dens, // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
                             -1.,-1.,-1.,
                             -1.,-1.,-1.,
                             -1.,-1.,-1.,
@@ -1501,19 +1501,19 @@ int main(int argc, char **argv)
                     FWRITE_TMP_FLOAT;
                     tmp_float = tmp_z;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density
+                    tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
                     FWRITE_TMP_FLOAT;
-                    tmp_float = cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac;
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac; // velocity in cell
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac;
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = vorticity[X];
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = vorticity[Y];
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
-                    tmp_float = vorticity[Z];
+                    tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
                     tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
@@ -1590,13 +1590,15 @@ int main(int argc, char **argv)
                     FWRITE_TMP_FLOAT;
                     tmp_float = -10.;
                     FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
 #endif
 #ifdef UonGrid
                     tmp_float = -1.;
                     FWRITE_TMP_FLOAT;
 #endif
 #endif
-                  } // else(cur_node->ll)
+                  } // else(fabs(cur_node->dens+simu.mean_dens) > CWEB_DENSTHRESHOLD)
                   
                 } // if(notboundary)
               } // for(cur_node)
