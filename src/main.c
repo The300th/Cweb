@@ -1347,11 +1347,11 @@ int main(int argc, char **argv)
                                  );
                          fflush(fpout);
 #else
-                         tmp_float = tmp_x;
+                         tmp_float = tmp_x;  // 1
                          FWRITE_TMP_FLOAT;
-                         tmp_float = tmp_y;
+                         tmp_float = tmp_y;  // 2
                          FWRITE_TMP_FLOAT;
-                         tmp_float = tmp_z;
+                         tmp_float = tmp_z;  // 3
                          FWRITE_TMP_FLOAT;
                          tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density
                          FWRITE_TMP_FLOAT;
@@ -1361,36 +1361,68 @@ int main(int argc, char **argv)
                          FWRITE_TMP_FLOAT;
                          tmp_float = cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac;
                          FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[X];
+                         tmp_float = vorticity[X]; // 8
                          FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[Y];
+                         tmp_float = vorticity[Y]; // 9
                          FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[Z];
+                         tmp_float = vorticity[Z]; // 10
                          FWRITE_TMP_FLOAT;
-                         tmp_float = lambda1;
+                         tmp_float = lambda1; // 11
                          FWRITE_TMP_FLOAT;
-                         tmp_float = lambda2;
+                         tmp_float = lambda2;  // 12
                          FWRITE_TMP_FLOAT;
-                         tmp_float = lambda3;
+                         tmp_float = lambda3;  // 13
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][0];
+                         tmp_float = itensor[0][0];  // 14
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][0];
+                         tmp_float = itensor[1][0];  // 15
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][0];
+                         tmp_float = itensor[2][0];  // 16
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][1];
+                         tmp_float = itensor[0][1];  // 17
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][1];
+                         tmp_float = itensor[1][1];  // 18
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][1];
+                         tmp_float = itensor[2][1];  // 19
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][2];
+                         tmp_float = itensor[0][2];  // 20
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][2];
+                         tmp_float = itensor[1][2];  // 21
                          FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][2];
+                         tmp_float = itensor[2][2];  // 22
                          FWRITE_TMP_FLOAT;
+#ifdef PWEB
+                         tmp_float = cur_node->pot*pot_fac;  // 23
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = pambda1;  // 24
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = pambda2;  // 25
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = pambda3;  // 26
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[0][0];  // 27
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[1][0];  // 28
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[2][0];  // 29
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[0][1];  // 30
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[1][1];  // 31
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[2][1];  // 32
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[0][2];  // 33
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[1][2];  // 34
+                         FWRITE_TMP_FLOAT;
+                         tmp_float = ptensor[2][2];  // 35
+                         FWRITE_TMP_FLOAT;
+#endif
+#ifdef UonGrid
+                         tmp_float = cur_node->u;
+                         FWRITE_TMP_FLOAT;
+#endif
 #ifdef DWEB
                          tmp_float = dambda1;
                          FWRITE_TMP_FLOAT;
@@ -1415,38 +1447,6 @@ int main(int argc, char **argv)
                          tmp_float = dtensor[1][2];
                          FWRITE_TMP_FLOAT;
                          tmp_float = dtensor[2][2];
-                         FWRITE_TMP_FLOAT;
-#endif
-#ifdef PWEB
-                         tmp_float = cur_node->pot*pot_fac;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda1;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda2;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda3;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][2];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][2];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][2];
-                         FWRITE_TMP_FLOAT;
-#endif
-#ifdef UonGrid
-                         tmp_float = cur_node->u;
                          FWRITE_TMP_FLOAT;
 #endif
 #endif
