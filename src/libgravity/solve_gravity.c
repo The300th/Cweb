@@ -80,6 +80,30 @@ void solve_cg(gridls *cur_grid)
   /* destroy memory assigned to dens_array */
   free(dens_array);
   
+#ifdef TEST_POT
+   {
+      nptr     tsc_nodes[3][3][3];
+      double   Delta_pot, Source;
+      FILE     *fp;
+      
+      fp = fopen("test_pot.dat","w");
+      cur_pquad = cur_grid->pquad;
+      for(k = 0, cur_cquad = cur_pquad->loc; k < l1dim; k++, cur_cquad++)
+         for(j = 0, cur_nquad = cur_cquad->loc; j < l1dim; j++, cur_nquad++)
+            for(i = 0, cur_node = cur_nquad->loc; i < l1dim; i++, cur_node++)
+            {
+               tsc_nodes[1][1][1] = cur_node;
+               get_TSCnodes(cur_grid, cur_pquad, cur_cquad, cur_nquad, tsc_nodes, &k, &j, &i);
+               
+               Delta_pot = Laplace_pot(tsc_nodes, pow2(cur_grid->spacing));
+               Source    = cur_node->dens * FourPiGa;
+
+               fprintf(fp,"%d %d %d %g %g %g\n",i,j,k,Delta_pot,Source,Delta_pot-Source);
+            }
+      fclose(fp);
+   }
+#endif
+  
 }
 
 
