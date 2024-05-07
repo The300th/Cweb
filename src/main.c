@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   double        local_shear[3][3];
   double        vorticity[3];
   double        itensor[3][3];
-    int         converged;
+  int         converged;
   double        lambda1, lambda2, lambda3;
   long          i, j, k;
   double        Wg, distance2;
@@ -831,7 +831,7 @@ int main(int argc, char **argv)
   simu.m_unit           = 0.0;
   simu.no_gas           = 0;
   simu.no_stars         = 0;
-
+  
 #endif
   
   
@@ -935,7 +935,7 @@ int main(int argc, char **argv)
 #ifdef PWEB
     fprintf(stderr,"\n    -> getting Pweb at the same time ... ");
 #endif
-
+    
     /* for centred finite differences (in physical units) */
     dx    = cur_grid->spacing*x_fac;
     dy    = cur_grid->spacing*x_fac;
@@ -943,7 +943,7 @@ int main(int argc, char **argv)
     twodx = 2.0*dx;
     twody = 2.0*dy;
     twodz = 2.0*dz;
-
+    
     Nknots           = 0;
     Nfilaments       = 0;
     Nsheets          = 0;
@@ -975,487 +975,365 @@ int main(int argc, char **argv)
                  *    -> otherwise it will be written by some other MPI task already */
                 if(notboundary == TRUE)
                 {
-                   // simply reset tsc_nodes[][][] -> will be filled by get_TSCnodes() below....
-                   for(i = 0; i <= 2; i++)
-                      for(j = 0; j <= 2; j++)
-                         for(k = 0; k <= 2; k++){
-                            tsc_nodes[i][j][k]=NULL;
-                         }
-                   tsc_nodes[1][1][1] = cur_node;
-                   get_TSCnodes(cur_grid, cur_pquad, icur_cquad, icur_nquad, tsc_nodes, &z, &y, &x);
-                   
-                   /* 2. only deal with current cell if the tensors can be properly calculated, i.e. the cell and its neighbours have (dens+mean_dens)>0 */
-                   //fprintf(stderr,"\n dens=%f (ll=%ld)",cur_node->dens+simu.mean_dens,cur_node->ll);
-                   if(check_for_zerodens(tsc_nodes, CWEB_DENSTHRESHOLD) == 1)
-                   {
-//                      /* 3. only use nodes that have neighbours for the finite difference calculation of dVi/drj
-//                       *    -> otherwise ignore as it is a boundary cell on a refinement level */
-//                      haveneighbours = test_tsc(tsc_nodes);
-//                      if(haveneighbours == TRUE)            // this test only makes sense to AMD grids, which are currently not implemented...
-                      {
-                         
-                         /* we need to divide the momentum density by the actual mass density to get the velocity */
-                         Vx_x2 = tsc_nodes[1][1][2]->densV[X]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
-                         Vx_x0 = tsc_nodes[1][1][0]->densV[X]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
-                         Vx_y2 = tsc_nodes[1][2][1]->densV[X]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
-                         Vx_y0 = tsc_nodes[1][0][1]->densV[X]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
-                         Vx_z2 = tsc_nodes[2][1][1]->densV[X]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
-                         Vx_z0 = tsc_nodes[0][1][1]->densV[X]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
-                         
-                         Vy_x2 = tsc_nodes[1][1][2]->densV[Y]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
-                         Vy_x0 = tsc_nodes[1][1][0]->densV[Y]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
-                         Vy_y2 = tsc_nodes[1][2][1]->densV[Y]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
-                         Vy_y0 = tsc_nodes[1][0][1]->densV[Y]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
-                         Vy_z2 = tsc_nodes[2][1][1]->densV[Y]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
-                         Vy_z0 = tsc_nodes[0][1][1]->densV[Y]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
-                         
-                         Vz_x2 = tsc_nodes[1][1][2]->densV[Z]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
-                         Vz_x0 = tsc_nodes[1][1][0]->densV[Z]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
-                         Vz_y2 = tsc_nodes[1][2][1]->densV[Z]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
-                         Vz_y0 = tsc_nodes[1][0][1]->densV[Z]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
-                         Vz_z2 = tsc_nodes[2][1][1]->densV[Z]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
-                         Vz_z0 = tsc_nodes[0][1][1]->densV[Z]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
-                         
-                         /* finite differences (in physical units) */
-                         dVxdx = v_fac*(Vx_x2-Vx_x0)/twodx;
-                         dVxdy = v_fac*(Vx_y2-Vx_y0)/twody;
-                         dVxdz = v_fac*(Vx_z2-Vx_z0)/twodz;
-                         
-                         dVydx = v_fac*(Vy_x2-Vy_x0)/twodx;
-                         dVydy = v_fac*(Vy_y2-Vy_y0)/twody;
-                         dVydz = v_fac*(Vy_z2-Vy_z0)/twodz;
-                         
-                         dVzdx = v_fac*(Vz_x2-Vz_x0)/twodx;
-                         dVzdy = v_fac*(Vz_y2-Vz_y0)/twody;
-                         dVzdz = v_fac*(Vz_z2-Vz_z0)/twodz;
-                         // TODO: not sure about the correct direction/sign here [2]-[0] or [0]-[2] !?
-                         
-                         /* vorticity */
-                         vorticity[X] = dVzdy-dVydz;
-                         vorticity[Y] = dVxdz-dVzdx;
-                         vorticity[Z] = dVydx-dVxdy;
-                         
-                         /* local shear tensor (units according to Hoffman et al. 2012) */
-                         local_shear[X][X] = -0.5/Hz*( (dVxdx) + (dVxdx) );  // dVx/dx + dVx/dx
-                         local_shear[Y][Y] = -0.5/Hz*( (dVydy) + (dVydy) );  // dVy/dy + dVy/dy
-                         local_shear[Z][Z] = -0.5/Hz*( (dVzdz) + (dVzdz) );  // dVz/dz + dVz/dz
-                         
-                         local_shear[X][Y] = -0.5/Hz*( (dVxdy) + (dVydx) );  // dVx/dy + dVy/dx
-                         local_shear[X][Z] = -0.5/Hz*( (dVxdz) + (dVzdx) );  // dVx/dz + dVz/dx
-                         local_shear[Y][Z] = -0.5/Hz*( (dVydz) + (dVzdy) );  // dVy/dz + dVz/dy
-                         
-                         local_shear[Y][X] = local_shear[X][Y];
-                         local_shear[Z][X] = local_shear[X][Z]; // symmetric tensor
-                         local_shear[Z][Y] = local_shear[Y][Z];
-                         
-                         /* get eigenvalues and eigenvectors (leave local_shear[][] unspoiled for debugging) */
-                         itensor[X][X] = local_shear[X][X];
-                         itensor[Y][Y] = local_shear[Y][Y];
-                         itensor[Z][Z] = local_shear[Z][Z];
-                         itensor[X][Y] = local_shear[X][Y];
-                         itensor[X][Z] = local_shear[X][Z];
-                         itensor[Y][Z] = local_shear[Y][Z];
-                         itensor[Y][X] = local_shear[Y][X];
-                         itensor[Z][X] = local_shear[Z][X];
-                         itensor[Z][Y] = local_shear[Z][Y];
-                         lambda1 = -1000.0;
-                         lambda2 = -1000.0;
-                         lambda3 = -1000.0;
-                         converged = get_axes(itensor, &lambda1, &lambda2, &lambda3);
-                         // NOTE: the eigenvalues and -vectors are ordered upon return axis1>axis2>axis3
-                         
+                  // simply reset tsc_nodes[][][] -> will be filled by get_TSCnodes() below....
+                  for(i = 0; i <= 2; i++)
+                    for(j = 0; j <= 2; j++)
+                      for(k = 0; k <= 2; k++){
+                        tsc_nodes[i][j][k]=NULL;
+                      }
+                  tsc_nodes[1][1][1] = cur_node;
+                  get_TSCnodes(cur_grid, cur_pquad, icur_cquad, icur_nquad, tsc_nodes, &z, &y, &x);
+                  
+                  /* 2. only deal with current cell if the tensors can be properly calculated, i.e. the cell and its neighbours have (dens+mean_dens)>0 */
+                  //fprintf(stderr,"\n dens=%f (ll=%ld)",cur_node->dens+simu.mean_dens,cur_node->ll);
+                  if(check_for_zerodens(tsc_nodes, CWEB_DENSTHRESHOLD) == 1)
+                  {
+                    //                      /* 3. only use nodes that have neighbours for the finite difference calculation of dVi/drj
+                    //                       *    -> otherwise ignore as it is a boundary cell on a refinement level */
+                    //                      haveneighbours = test_tsc(tsc_nodes);
+                    //                      if(haveneighbours == TRUE)            // this test only makes sense to AMD grids, which are currently not implemented...
+                    {
+                      
+                      /* we need to divide the momentum density by the actual mass density to get the velocity */
+                      Vx_x2 = tsc_nodes[1][1][2]->densV[X]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
+                      Vx_x0 = tsc_nodes[1][1][0]->densV[X]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
+                      Vx_y2 = tsc_nodes[1][2][1]->densV[X]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
+                      Vx_y0 = tsc_nodes[1][0][1]->densV[X]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
+                      Vx_z2 = tsc_nodes[2][1][1]->densV[X]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
+                      Vx_z0 = tsc_nodes[0][1][1]->densV[X]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
+                      
+                      Vy_x2 = tsc_nodes[1][1][2]->densV[Y]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
+                      Vy_x0 = tsc_nodes[1][1][0]->densV[Y]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
+                      Vy_y2 = tsc_nodes[1][2][1]->densV[Y]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
+                      Vy_y0 = tsc_nodes[1][0][1]->densV[Y]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
+                      Vy_z2 = tsc_nodes[2][1][1]->densV[Y]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
+                      Vy_z0 = tsc_nodes[0][1][1]->densV[Y]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
+                      
+                      Vz_x2 = tsc_nodes[1][1][2]->densV[Z]/(tsc_nodes[1][1][2]->dens+simu.mean_dens);
+                      Vz_x0 = tsc_nodes[1][1][0]->densV[Z]/(tsc_nodes[1][1][0]->dens+simu.mean_dens);
+                      Vz_y2 = tsc_nodes[1][2][1]->densV[Z]/(tsc_nodes[1][2][1]->dens+simu.mean_dens);
+                      Vz_y0 = tsc_nodes[1][0][1]->densV[Z]/(tsc_nodes[1][0][1]->dens+simu.mean_dens);
+                      Vz_z2 = tsc_nodes[2][1][1]->densV[Z]/(tsc_nodes[2][1][1]->dens+simu.mean_dens);
+                      Vz_z0 = tsc_nodes[0][1][1]->densV[Z]/(tsc_nodes[0][1][1]->dens+simu.mean_dens);
+                      
+                      /* finite differences (in physical units) */
+                      dVxdx = v_fac*(Vx_x2-Vx_x0)/twodx;
+                      dVxdy = v_fac*(Vx_y2-Vx_y0)/twody;
+                      dVxdz = v_fac*(Vx_z2-Vx_z0)/twodz;
+                      
+                      dVydx = v_fac*(Vy_x2-Vy_x0)/twodx;
+                      dVydy = v_fac*(Vy_y2-Vy_y0)/twody;
+                      dVydz = v_fac*(Vy_z2-Vy_z0)/twodz;
+                      
+                      dVzdx = v_fac*(Vz_x2-Vz_x0)/twodx;
+                      dVzdy = v_fac*(Vz_y2-Vz_y0)/twody;
+                      dVzdz = v_fac*(Vz_z2-Vz_z0)/twodz;
+                      // TODO: not sure about the correct direction/sign here [2]-[0] or [0]-[2] !?
+                      
+                      /* vorticity */
+                      vorticity[X] = dVzdy-dVydz;
+                      vorticity[Y] = dVxdz-dVzdx;
+                      vorticity[Z] = dVydx-dVxdy;
+                      
+                      /* local shear tensor (units according to Hoffman et al. 2012) */
+                      local_shear[X][X] = -0.5/Hz*( (dVxdx) + (dVxdx) );  // dVx/dx + dVx/dx
+                      local_shear[Y][Y] = -0.5/Hz*( (dVydy) + (dVydy) );  // dVy/dy + dVy/dy
+                      local_shear[Z][Z] = -0.5/Hz*( (dVzdz) + (dVzdz) );  // dVz/dz + dVz/dz
+                      
+                      local_shear[X][Y] = -0.5/Hz*( (dVxdy) + (dVydx) );  // dVx/dy + dVy/dx
+                      local_shear[X][Z] = -0.5/Hz*( (dVxdz) + (dVzdx) );  // dVx/dz + dVz/dx
+                      local_shear[Y][Z] = -0.5/Hz*( (dVydz) + (dVzdy) );  // dVy/dz + dVz/dy
+                      
+                      local_shear[Y][X] = local_shear[X][Y];
+                      local_shear[Z][X] = local_shear[X][Z]; // symmetric tensor
+                      local_shear[Z][Y] = local_shear[Y][Z];
+                      
+                      /* get eigenvalues and eigenvectors (leave local_shear[][] unspoiled for debugging) */
+                      itensor[X][X] = local_shear[X][X];
+                      itensor[Y][Y] = local_shear[Y][Y];
+                      itensor[Z][Z] = local_shear[Z][Z];
+                      itensor[X][Y] = local_shear[X][Y];
+                      itensor[X][Z] = local_shear[X][Z];
+                      itensor[Y][Z] = local_shear[Y][Z];
+                      itensor[Y][X] = local_shear[Y][X];
+                      itensor[Z][X] = local_shear[Z][X];
+                      itensor[Z][Y] = local_shear[Z][Y];
+                      lambda1 = -1000.0;
+                      lambda2 = -1000.0;
+                      lambda3 = -1000.0;
+                      converged = get_axes(itensor, &lambda1, &lambda2, &lambda3);
+                      // NOTE: the eigenvalues and -vectors are ordered upon return axis1>axis2>axis3
+                      
 #ifdef IGNORE_JACOBI_NONCONVERGENCE
-                         if(converged == 0){
-                            fprintf(stderr," ---> (Vweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
-                                    x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
-                            lambda1 = lambda2 = lambda3 = -3.1415;
-                            itensor[X][X] = itensor[X][Y] = itensor[X][Z] = -3.1415;
-                            itensor[X][Y] = itensor[Y][Y] = itensor[Y][Z] = -3.1415;
-                            itensor[X][Z] = itensor[Y][Z] = itensor[Z][Z] = -3.1415;
-                         }
+                      if(converged == 0){
+                        fprintf(stderr," ---> (Vweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                        lambda1 = lambda2 = lambda3 = -3.1415;
+                        itensor[X][X] = itensor[X][Y] = itensor[X][Z] = -3.1415;
+                        itensor[X][Y] = itensor[Y][Y] = itensor[Y][Z] = -3.1415;
+                        itensor[X][Z] = itensor[Y][Z] = itensor[Z][Z] = -3.1415;
+                      }
 #endif
-                         
-                         /* count web elements */
-                         if(lambda3 > LAMBDA_THRESHOLD)                               Nknots++;
-                         if(lambda2 > LAMBDA_THRESHOLD && lambda3 < LAMBDA_THRESHOLD) Nfilaments++;
-                         if(lambda1 > LAMBDA_THRESHOLD && lambda2 < LAMBDA_THRESHOLD) Nsheets++;
-                         if(lambda1 < LAMBDA_THRESHOLD)                               Nvoids++;
-                         
+                      
+                      /* count web elements */
+                      if(lambda3 > LAMBDA_THRESHOLD)                               Nknots++;
+                      if(lambda2 > LAMBDA_THRESHOLD && lambda3 < LAMBDA_THRESHOLD) Nfilaments++;
+                      if(lambda1 > LAMBDA_THRESHOLD && lambda2 < LAMBDA_THRESHOLD) Nsheets++;
+                      if(lambda1 < LAMBDA_THRESHOLD)                               Nvoids++;
+                      
 #if defined(DWEB) || defined(PWEB)
-                         /* Now we use mhd nodes to make proper derivations */
-                         for(i = 0; i <= 4; i++)
-                            for(j = 0; j <= 4; j++)
-                               for(k = 0; k <= 4; k++){
-                                  mhd_nodes[i][j][k]=NULL;
-                               }
-                         get_MHDnodes(cur_grid, cur_pquad, z, y, x, mhd_nodes);
-//                         haveneighbours = test_mhd(mhd_nodes);
-                         haveneighbours = TRUE; // this test only makes sense for AMR grids, which are currently not implemented
+                      /* Now we use mhd nodes to make proper derivations */
+                      for(i = 0; i <= 4; i++)
+                        for(j = 0; j <= 4; j++)
+                          for(k = 0; k <= 4; k++){
+                            mhd_nodes[i][j][k]=NULL;
+                          }
+                      get_MHDnodes(cur_grid, cur_pquad, z, y, x, mhd_nodes);
+                      //                         haveneighbours = test_mhd(mhd_nodes);
+                      haveneighbours = TRUE; // this test only makes sense for AMR grids, which are currently not implemented
 #endif
-
+                      
 #ifdef DWEB  // doese DWEB actually make sense at all!?!?!
-                         for(i = 0; i <= 2; i++)
-                            for(j = 0; j <= 2; j++)
-                               dtensor[i][j] = 0;
-                         dambda1 = -1000.0;
-                         dambda2 = -1000.0;
-                         dambda3 = -1000.0;
-
-                         converged = 0;
-
-#ifdef DWEB_AK // my own version --> not accurate enough!
-                         /* Old version only using the direct neighbours only, no fancy derivatives... */
-                         dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
-                         dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
-                         dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
-                         
-                         /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                         dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
-                         dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                         dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
-                         
-                         /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
-                         //                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
-                         //                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
-                         //                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
-                         //                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
-                         //                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
-                         //                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
-                         
-                         dtensor[1][0] = dtensor[0][1];
-                         dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
-                         dtensor[2][1] = dtensor[1][2];
-                         
-                         // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
-                         for(i = 0; i <= 2; i++)
-                            for(j = 0; j <= 2; j++)
-                               dtensor[i][j] *= rho_fac;
-                         
-                         converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          dtensor[i][j] = 0;
+                      dambda1 = -1000.0;
+                      dambda2 = -1000.0;
+                      dambda3 = -1000.0;
+                      
+                      converged = 0;
+                      
+#ifdef DWEB_AK // my own version
+                      /* Old version only using the direct neighbours only, no fancy derivatives... */
+                      dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
+                      dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
+                      dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
+                      
+                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
+                      dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
+                      dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                      dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
+                      
+                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
+                      //                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
+                      //                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
+                      //                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
+                      //                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
+                      //                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
+                      //                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
+                      
+                      dtensor[1][0] = dtensor[0][1];
+                      dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
+                      dtensor[2][1] = dtensor[1][2];
+                      
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          dtensor[i][j] *= rho_fac;
+                      
+                      converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
 #else // DWEB_AK
-                         Wg        = 0.0;
-                         
-                         if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
-                         {
-                            for(i = 0; i <= 2; i++)
-                               for(j = 0; j <= 2; j++)
-                                  for(k = 0; k <= 2; k++){
-                                     dFdx[i][j][k]=0;
-                                     dFdy[i][j][k]=0;
-                                     dFdz[i][j][k]=0;
-                                  }
-                            /* calculate the first order derivation*/
-                            for(i = 1; i <= 3; i++)
-                               for(j = 1; j <= 3; j++)
-                                  for (k = 1; k<=3; k++){
-                                     dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
-                                     dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
-                                     dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
-                                  }
-                            /* calculate the second order derivation*/
-                            for(i = 0; i <= 2; i++)
-                               for(j = 0; j <= 2; j++){
-                                  //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
-                                  //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
-                                  //                            Wg += 1./distance2;
-                                  dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
-                                  dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
-                                  dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
-                                  dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
-                                  dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
-                                  dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
-                                  dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
-                                  dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
-                                  dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
-                               }
-                            //                        for(i = 0; i <= 2; i++)
-                            //                          for(j = 0; j <= 2; j++)
-                            //                            dtensor[i][j] /= Wg;
-                            converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
-                            
-                         }  //if have neighbours for mhd_nodes
-                         
+                      Wg        = 0.0;
+                      
+                      if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
+                      {
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++)
+                            for(k = 0; k <= 2; k++){
+                              dFdx[i][j][k]=0;
+                              dFdy[i][j][k]=0;
+                              dFdz[i][j][k]=0;
+                            }
+                        /* calculate the first order derivation*/
+                        for(i = 1; i <= 3; i++)
+                          for(j = 1; j <= 3; j++)
+                            for (k = 1; k<=3; k++){
+                              dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
+                              dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
+                              dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
+                            }
+                        /* calculate the second order derivation*/
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++){
+                            //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
+                            //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
+                            //                            Wg += 1./distance2;
+                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
+                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
+                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
+                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
+                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
+                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
+                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
+                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
+                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
+                          }
+                        //                        for(i = 0; i <= 2; i++)
+                        //                          for(j = 0; j <= 2; j++)
+                        //                            dtensor[i][j] /= Wg;
+                        converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                        
+                      }  //if have neighbours for mhd_nodes
+                      
 #endif // DWEB_AK
-                         
+                      
 #ifdef IGNORE_JACOBI_NONCONVERGENCE
-                         if(converged == 0){
-                            fprintf(stderr," ---> (Dweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
-                                    x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
-                            dambda1 = dambda2 = dambda3 = -3.1415;
-                            dtensor[X][X] = dtensor[X][Y] = dtensor[X][Z] = -3.1415;
-                            dtensor[X][Y] = dtensor[Y][Y] = dtensor[Y][Z] = -3.1415;
-                            dtensor[X][Z] = dtensor[Y][Z] = dtensor[Z][Z] = -3.1415;
-                         }
+                      if(converged == 0){
+                        fprintf(stderr," ---> (Dweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                        dambda1 = dambda2 = dambda3 = -3.1415;
+                        dtensor[X][X] = dtensor[X][Y] = dtensor[X][Z] = -3.1415;
+                        dtensor[X][Y] = dtensor[Y][Y] = dtensor[Y][Z] = -3.1415;
+                        dtensor[X][Z] = dtensor[Y][Z] = dtensor[Z][Z] = -3.1415;
+                      }
 #endif
-                         
+                      
 #endif // DWEB
-                         
-                         
+                      
+                      
 #ifdef PWEB
-                         for(i = 0; i <= 2; i++)
-                            for(j = 0; j <= 2; j++)
-                               ptensor[i][j] = 0;
-                         pambda1 = -1000.0;
-                         pambda2 = -1000.0;
-                         pambda3 = -1000.0;
-                         
-                         converged = 0;
-
-#ifdef PWEB_AK // my own version --> not accurate enough!
-                         
-                         // Old version only using the direct neighbours, no fancy derivatives...(does not give reasonable results though!?)
-                         ptensor[0][0] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][1][0]->pot))/dx/dx;
-                         ptensor[1][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][0][1]->pot))/dy/dy; // this is 2nd order accurate
-                         ptensor[2][2] = ((tsc_nodes[2][1][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[0][1][1]->pot))/dz/dz;
-                         
-                         /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                         ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/twody - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/twody)/twodx;
-                         ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/twodz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                         ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/twodz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/twody)/twody;
-                         
-                         /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
-                         //                       ptensor[0][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[0][2][1]->pot) - (tsc_nodes[1][0][1]->pot - tsc_nodes[0][0][1]->pot) +
-                         //                                        (tsc_nodes[2][2][1]->pot - tsc_nodes[1][2][1]->pot) - (tsc_nodes[2][0][1]->pot - tsc_nodes[1][0][1]->pot))/dx/dy/4.0;
-                         //                       ptensor[0][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[0][1][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[0][1][0]->pot) +
-                         //                                        (tsc_nodes[2][1][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[2][1][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dz/4.0;
-                         //                       ptensor[1][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][0][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[1][0][0]->pot) +
-                         //                                        (tsc_nodes[1][2][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dy/4.0;
-                         
-                         ptensor[1][0] = ptensor[0][1];
-                         ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
-                         ptensor[2][1] = ptensor[1][2];
-                         
-                         // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
-                         for(i = 0; i <= 2; i++)
-                            for(j = 0; j <= 2; j++)
-                               ptensor[i][j] *= pot_fac/Hz2;
-                         
-                         converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
-                         
-#else // PWEB_AK
-                         Wg = 0.0;
-                         
-                         if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
-                         {
-                            for(i = 0; i <= 2; i++)
-                               for(j = 0; j <= 2; j++)
-                                  for(k = 0; k <= 2; k++){
-                                     dFdx[i][j][k]=0;
-                                     dFdy[i][j][k]=0;
-                                     dFdz[i][j][k]=0;
-                                  }
-                            /* calculate the first order derivation*/
-                            for(i = 1; i <= 3; i++)
-                               for(j = 1; j <= 3; j++)
-                                  for (k = 1; k<=3; k++){
-                                     dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / twodx; // pot in unit of grid which needs to * x_fac^2
-                                     dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / twody; // dx,dy,dz with length of 2 grids are already in physical units!
-                                     dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / twodz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
-                                  }
-                            /* calculate the second order derivation*/
-                            for(i = 0; i <= 2; i++)
-                               for(j = 0; j <= 2; j++){
-                                  //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
-                                  //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
-                                  //                            Wg += 1./distance2;
-                                  ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;  // d^2F/dx^2
-                                  ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;  // d^2F/dz^2
-                                  ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;  // d(dF/dx)/dy
-                                  ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;  // d(dF/dx)/dz
-                                  ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;  // d^2F/dy^2
-                                  ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;  // d(dF/dy)/dx
-                                  ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;  // d(dF/dy)/dz
-                                  ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;  // d(dF/dz)/dx
-                                  ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;  // d(dF/dz)/dy
-                               }
-                            //                        for(i = 0; i <= 2; i++)
-                            //                          for(j = 0; j <= 2; j++)
-                            //                            dtensor[i][j] /= Wg;
-                            
-                            // missing unit factor for potential, making tensor[][] dimensionless, too!?
-                            for(i = 0; i <= 2; i++)
-                               for(j = 0; j <= 2; j++)
-                                  ptensor[i][j] *= pot_fac/Hz2;
-                            
-                            // the Hessian matrix should be symmetric:
-                            //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
-                            
-                            // the trace of ptensor[][] should be the density (the source term, cf. solve_gravity.c)
-                            //                        fprintf(stderr,"%g = %g ... ",
-                            //                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
-                            //                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
-                            
-                            converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
-                         }  //if have neighbours for mhd_nodes
-                         
-#endif // PWEB_AK
-                         
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          ptensor[i][j] = 0;
+                      pambda1 = -1000.0;
+                      pambda2 = -1000.0;
+                      pambda3 = -1000.0;
+                      
+                      converged = 0;
+                      
+#ifdef PWEB_WC // Weiguang's version that unfortunately does not comply with "sum(pambda)=dens" (cf. TEST_PWEB)
+                      
+                      Wg = 0.0;
+                      
+                      if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
+                      {
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++)
+                            for(k = 0; k <= 2; k++){
+                              dFdx[i][j][k]=0;
+                              dFdy[i][j][k]=0;
+                              dFdz[i][j][k]=0;
+                            }
+                        /* calculate the first order derivation*/
+                        for(i = 1; i <= 3; i++)
+                          for(j = 1; j <= 3; j++)
+                            for (k = 1; k<=3; k++){
+                              dFdx[i-1][j-1][k-1] = (mhd_nodes[i][j][k+1]->pot - mhd_nodes[i][j][k-1]->pot) / twodx; // pot in unit of grid which needs to * x_fac^2
+                              dFdy[i-1][j-1][k-1] = (mhd_nodes[i][j+1][k]->pot - mhd_nodes[i][j-1][k]->pot) / twody; // dx,dy,dz with length of 2 grids are already in physical units!
+                              dFdz[i-1][j-1][k-1] = (mhd_nodes[i+1][j][k]->pot - mhd_nodes[i-1][j][k]->pot) / twodz; //  [+1] - [-1] includes grids (2-0, 3-1, 4-2), [i,j,k] only selects central grids [1, 2, 3] for the second derivative
+                            }
+                        /* calculate the second order derivation*/
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++){
+                            //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
+                            //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
+                            //                            Wg += 1./distance2;
+                            ptensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;  // d^2F/dx^2
+                            ptensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;  // d^2F/dz^2
+                            ptensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;  // d(dF/dx)/dy
+                            ptensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;  // d(dF/dx)/dz
+                            ptensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;  // d^2F/dy^2
+                            ptensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;  // d(dF/dy)/dx
+                            ptensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;  // d(dF/dy)/dz
+                            ptensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;  // d(dF/dz)/dx
+                            ptensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;  // d(dF/dz)/dy
+                          }
+                        //                        for(i = 0; i <= 2; i++)
+                        //                          for(j = 0; j <= 2; j++)
+                        //                            dtensor[i][j] /= Wg;
+                        
+#ifdef TEST_PWEB
+                        {
+                          fprintf(stderr,"%g %g %g\n",
+                                  tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                                  (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*pow2(x_fac),
+                                  tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter)-(ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*pow2(x_fac));
+                        }
+#endif
+                        // missing unit factor for potential, making tensor[][] dimensionless, too!?
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++)
+                            ptensor[i][j] *= pot_fac/Hz2;
+                        
+                        // the Hessian matrix should be symmetric:
+                        //fprintf(stderr,"%lf =? %lf\n",ptensor[0][1],ptensor[1][0]); AK: these components are *not* identical!?
+                        
+                        // the trace of ptensor[][] should be the density (the source term, cf. solve_gravity.c)
+                        //                        fprintf(stderr,"%g = %g ... ",
+                        //                                cur_node->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                        //                                (ptensor[0][0]+ptensor[1][1]+ptensor[2][2])*Hz2/pot_fac*pow2(x_fac));
+                        
+                        converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                        
+#ifdef TEST_PWEB
+                        {
+                          fprintf(stderr,"%g %g %g\n\n",
+                                  tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                                  (pambda1+pambda2+pambda3)*pow2(x_fac)*Hz2/pot_fac,
+                                  tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter)-(pambda1+pambda2+pambda3)*pow2(x_fac)*Hz2/pot_fac);
+                        }
+#endif
+                      }  //if have neighbours for mhd_nodes
+                      
+#else // PWEB_WC
+                      
+                      // Old version only using the direct neighbours, no fancy derivatives...(does not give reasonable results though!?)
+                      ptensor[0][0] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][1][0]->pot))/dx/dx;
+                      ptensor[1][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[1][0][1]->pot))/dy/dy; // this is 2nd order accurate
+                      ptensor[2][2] = ((tsc_nodes[2][1][1]->pot - tsc_nodes[1][1][1]->pot) - (tsc_nodes[1][1][1]->pot - tsc_nodes[0][1][1]->pot))/dz/dz;
+                      
+                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
+                      ptensor[0][1] = ((tsc_nodes[1][2][2]->pot - tsc_nodes[1][0][2]->pot)/twody - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][0][0]->pot)/twody)/twodx;
+                      ptensor[0][2] = ((tsc_nodes[2][1][2]->pot - tsc_nodes[0][1][2]->pot)/twodz - (tsc_nodes[2][1][0]->pot - tsc_nodes[0][1][0]->pot)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                      ptensor[1][2] = ((tsc_nodes[2][2][1]->pot - tsc_nodes[0][2][1]->pot)/twodz - (tsc_nodes[2][0][1]->pot - tsc_nodes[0][0][1]->pot)/twody)/twody;
+                      
+                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
+                      //                       ptensor[0][1] = ((tsc_nodes[1][2][1]->pot - tsc_nodes[0][2][1]->pot) - (tsc_nodes[1][0][1]->pot - tsc_nodes[0][0][1]->pot) +
+                      //                                        (tsc_nodes[2][2][1]->pot - tsc_nodes[1][2][1]->pot) - (tsc_nodes[2][0][1]->pot - tsc_nodes[1][0][1]->pot))/dx/dy/4.0;
+                      //                       ptensor[0][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[0][1][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[0][1][0]->pot) +
+                      //                                        (tsc_nodes[2][1][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[2][1][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dz/4.0;
+                      //                       ptensor[1][2] = ((tsc_nodes[1][1][2]->pot - tsc_nodes[1][0][2]->pot) - (tsc_nodes[1][1][0]->pot - tsc_nodes[1][0][0]->pot) +
+                      //                                        (tsc_nodes[1][2][2]->pot - tsc_nodes[1][1][2]->pot) - (tsc_nodes[1][2][0]->pot - tsc_nodes[1][1][0]->pot))/dx/dy/4.0;
+                      
+                      ptensor[1][0] = ptensor[0][1];
+                      ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
+                      ptensor[2][1] = ptensor[1][2];
+                      
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          ptensor[i][j] *= pow2(x_fac); // this brings it back to (most meaningful) internal units
+                      
+#ifdef TEST_PWEB
+                      fprintf(stderr,"%g %g %g\n",
+                              tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                              (ptensor[0][0]+ptensor[1][1]+ptensor[2][2]),
+                              tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter)-(ptensor[0][0]+ptensor[1][1]+ptensor[2][2]));
+#endif
+                      
+                      converged = get_axes(ptensor, &pambda1, &pambda2, &pambda3);
+                      
+#ifdef TEST_PWEB
+                      fprintf(stderr,"%g %g %g\n\n",
+                              tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter),
+                              (pambda1+pambda2+pambda3),
+                              tsc_nodes[1][1][1]->dens*simu.FourPiG*calc_super_a(cur_grid->timecounter)-(pambda1+pambda2+pambda3));
+#endif
+                      
+#endif // PWEB_WC
+                      
 #ifdef IGNORE_JACOBI_NONCONVERGENCE
-                         if(converged == 0){
-                            fprintf(stderr," ---> (Pweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
-                                    x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
-                            pambda1 = pambda2 = pambda3 = -3.1415;
-                            ptensor[X][X] = ptensor[X][Y] = ptensor[X][Z] = -3.1415;
-                            ptensor[X][Y] = ptensor[Y][Y] = ptensor[Y][Z] = -3.1415;
-                            ptensor[X][Z] = ptensor[Y][Z] = ptensor[Z][Z] = -3.1415;
-                         }
+                      if(converged == 0){
+                        fprintf(stderr," ---> (Pweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                        pambda1 = pambda2 = pambda3 = -3.1415;
+                        ptensor[X][X] = ptensor[X][Y] = ptensor[X][Z] = -3.1415;
+                        ptensor[X][Y] = ptensor[Y][Y] = ptensor[Y][Z] = -3.1415;
+                        ptensor[X][Z] = ptensor[Y][Z] = ptensor[Z][Z] = -3.1415;
+                      }
 #endif
-                         
+                      
 #endif // PWEB
-                         
-                         /* write information to output file */
-                         Nnodes_written++;
-                         
-                         tmp_x = ((float)x+0.5)/cur_grid->l1dim*x_fac;
-                         tmp_y = ((float)y+0.5)/cur_grid->l1dim*x_fac;
-                         tmp_z = ((float)z+0.5)/cur_grid->l1dim*x_fac;
-                         
-#ifdef AHFrfocusRescale
-                         tmp_x /= simu.boxsize;
-                         tmp_y /= simu.boxsize;
-                         tmp_z /= simu.boxsize;
-                         
-                         tmp_x *= (2*AHFrfocusR)/simu.boxsize;
-                         tmp_y *= (2*AHFrfocusR)/simu.boxsize;
-                         tmp_z *= (2*AHFrfocusR)/simu.boxsize;
-                         
-                         tmp_x += (AHFrfocusX-AHFrfocusR)/simu.boxsize;
-                         tmp_y += (AHFrfocusY-AHFrfocusR)/simu.boxsize;
-                         tmp_z += (AHFrfocusZ-AHFrfocusR)/simu.boxsize;
-                         
-                         tmp_x *= simu.boxsize;
-                         tmp_y *= simu.boxsize;
-                         tmp_z *= simu.boxsize;
-#endif
-                         
-#ifdef WRITE_ASCII
-                         fprintf(fpout,"%16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8g %16.8g %16.8g %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf\n",
-                                 tmp_x,
-                                 tmp_y,
-                                 tmp_z,
-                                 cur_node->dens+simu.mean_dens, // density in terms of background density
-                                 cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac,
-                                 cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac, // velocity in cell
-                                 cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac,
-                                 vorticity[X],
-                                 vorticity[Y], // already in the correct units
-                                 vorticity[Z],
-                                 lambda1,lambda2,lambda3,
-                                 itensor[0][0],itensor[1][0],itensor[2][0],
-                                 itensor[0][1],itensor[1][1],itensor[2][1],
-                                 itensor[0][2],itensor[1][2],itensor[2][2]
-                                 );
-                         fflush(fpout);
-#else
-                         tmp_float = tmp_x;  // 1
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = tmp_y;  // 2
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = tmp_z;  // 3
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac; // velocity in cell
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[X]; // 8
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[Y]; // 9
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = vorticity[Z]; // 10
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = lambda1; // 11
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = lambda2;  // 12
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = lambda3;  // 13
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][0];  // 14
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][0];  // 15
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][0];  // 16
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][1];  // 17
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][1];  // 18
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][1];  // 19
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[0][2];  // 20
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[1][2];  // 21
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = itensor[2][2];  // 22
-                         FWRITE_TMP_FLOAT;
-#ifdef PWEB
-                         tmp_float = cur_node->pot*pot_fac;  // 23
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda1;  // 24
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda2;  // 25
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = pambda3;  // 26
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][0];  // 27
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][0];  // 28
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][0];  // 29
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][1];  // 30
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][1];  // 31
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][1];  // 32
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[0][2];  // 33
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[1][2];  // 34
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = ptensor[2][2];  // 35
-                         FWRITE_TMP_FLOAT;
-#endif
-#ifdef UonGrid
-                         tmp_float = cur_node->u;
-                         FWRITE_TMP_FLOAT;
-#endif
-#ifdef DWEB
-                         tmp_float = dambda1;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dambda2;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dambda3;
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[0][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[1][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[2][0];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[0][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[1][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[2][1];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[0][2];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[1][2];
-                         FWRITE_TMP_FLOAT;
-                         tmp_float = dtensor[2][2];
-                         FWRITE_TMP_FLOAT;
-#endif
-#endif
-                      } // if(haveneighbours)
-                   } // if(check_for_zerodens())
-                   else
-                   {
-                      /* count and write empty cells as void */
-                      Nvoids++;
                       
                       /* write information to output file */
                       Nnodes_written++;
@@ -1481,130 +1359,284 @@ int main(int argc, char **argv)
                       tmp_y *= simu.boxsize;
                       tmp_z *= simu.boxsize;
 #endif
+                      
 #ifdef WRITE_ASCII
                       fprintf(fpout,"%16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8g %16.8g %16.8g %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf\n",
                               tmp_x,
                               tmp_y,
                               tmp_z,
-                              cur_node->dens+simu.mean_dens, // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
-                              -1.,
-                              -1.,
-                              -1.,
-                              -1.,
-                              -1.,
-                              -1.,
-                              -1.,-1.,-1.,
-                              -1.,-1.,-1.,
-                              -1.,-1.,-1.,
-                              -1.,-1.,-1.
+                              cur_node->dens+simu.mean_dens, // density in terms of background density
+                              cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac,
+                              cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac, // velocity in cell
+                              cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac,
+                              vorticity[X],
+                              vorticity[Y], // already in the correct units
+                              vorticity[Z],
+                              lambda1,lambda2,lambda3,
+                              itensor[0][0],itensor[1][0],itensor[2][0],
+                              itensor[0][1],itensor[1][1],itensor[2][1],
+                              itensor[0][2],itensor[1][2],itensor[2][2]
                               );
                       fflush(fpout);
 #else
-                      tmp_float = tmp_x;
+                      tmp_float = tmp_x;  // 1
                       FWRITE_TMP_FLOAT;
-                      tmp_float = tmp_y;
+                      tmp_float = tmp_y;  // 2
                       FWRITE_TMP_FLOAT;
-                      tmp_float = tmp_z;
+                      tmp_float = tmp_z;  // 3
                       FWRITE_TMP_FLOAT;
-                      tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
+                      tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = cur_node->densV[X]/(cur_node->dens+simu.mean_dens)*v_fac;
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = cur_node->densV[Y]/(cur_node->dens+simu.mean_dens)*v_fac; // velocity in cell
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = cur_node->densV[Z]/(cur_node->dens+simu.mean_dens)*v_fac;
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = vorticity[X]; // 8
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = vorticity[Y]; // 9
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = vorticity[Z]; // 10
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = lambda1; // 11
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = lambda2;  // 12
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = lambda3;  // 13
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[0][0];  // 14
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[1][0];  // 15
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[2][0];  // 16
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[0][1];  // 17
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[1][1];  // 18
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[2][1];  // 19
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[0][2];  // 20
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[1][2];  // 21
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -1.;
+                      tmp_float = itensor[2][2];  // 22
                       FWRITE_TMP_FLOAT;
-#ifdef DWEB
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
-                      FWRITE_TMP_FLOAT;
-#endif
 #ifdef PWEB
-                      tmp_float = -10.;
+                      tmp_float = cur_node->pot*pot_fac;  // 23
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = pambda1;  // 24
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = pambda2;  // 25
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = pambda3;  // 26
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[0][0];  // 27
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[1][0];  // 28
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[2][0];  // 29
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[0][1];  // 30
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[1][1];  // 31
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[2][1];  // 32
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[0][2];  // 33
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[1][2];  // 34
                       FWRITE_TMP_FLOAT;
-                      tmp_float = -10.;
+                      tmp_float = ptensor[2][2];  // 35
                       FWRITE_TMP_FLOAT;
 #endif
 #ifdef UonGrid
-                      tmp_float = -1.;
+                      tmp_float = cur_node->u;
+                      FWRITE_TMP_FLOAT;
+#endif
+#ifdef DWEB
+                      tmp_float = dambda1;
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dambda2;
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dambda3;
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[0][0];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[1][0];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[2][0];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[0][1];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[1][1];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[2][1];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[0][2];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[1][2];
+                      FWRITE_TMP_FLOAT;
+                      tmp_float = dtensor[2][2];
                       FWRITE_TMP_FLOAT;
 #endif
 #endif
-                   } // else(fabs(cur_node->dens+simu.mean_dens) > CWEB_DENSTHRESHOLD)
-                   
+                    } // if(haveneighbours)
+                  } // if(check_for_zerodens())
+                  else
+                  {
+                    /* count and write empty cells as void */
+                    Nvoids++;
+                    
+                    /* write information to output file */
+                    Nnodes_written++;
+                    
+                    tmp_x = ((float)x+0.5)/cur_grid->l1dim*x_fac;
+                    tmp_y = ((float)y+0.5)/cur_grid->l1dim*x_fac;
+                    tmp_z = ((float)z+0.5)/cur_grid->l1dim*x_fac;
+                    
+#ifdef AHFrfocusRescale
+                    tmp_x /= simu.boxsize;
+                    tmp_y /= simu.boxsize;
+                    tmp_z /= simu.boxsize;
+                    
+                    tmp_x *= (2*AHFrfocusR)/simu.boxsize;
+                    tmp_y *= (2*AHFrfocusR)/simu.boxsize;
+                    tmp_z *= (2*AHFrfocusR)/simu.boxsize;
+                    
+                    tmp_x += (AHFrfocusX-AHFrfocusR)/simu.boxsize;
+                    tmp_y += (AHFrfocusY-AHFrfocusR)/simu.boxsize;
+                    tmp_z += (AHFrfocusZ-AHFrfocusR)/simu.boxsize;
+                    
+                    tmp_x *= simu.boxsize;
+                    tmp_y *= simu.boxsize;
+                    tmp_z *= simu.boxsize;
+#endif
+#ifdef WRITE_ASCII
+                    fprintf(fpout,"%16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f %16.8g %16.8g %16.8g %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf %16.8lf\n",
+                            tmp_x,
+                            tmp_y,
+                            tmp_z,
+                            cur_node->dens+simu.mean_dens, // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,
+                            -1.,-1.,-1.,
+                            -1.,-1.,-1.,
+                            -1.,-1.,-1.,
+                            -1.,-1.,-1.
+                            );
+                    fflush(fpout);
+#else
+                    tmp_float = tmp_x;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = tmp_y;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = tmp_z;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = cur_node->dens+simu.mean_dens; // density in terms of background density (should be < CWEB_DENSTHRESHOLD)
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+#ifdef DWEB
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+#endif
+#ifdef PWEB
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+                    tmp_float = -10.;
+                    FWRITE_TMP_FLOAT;
+#endif
+#ifdef UonGrid
+                    tmp_float = -1.;
+                    FWRITE_TMP_FLOAT;
+#endif
+#endif
+                  } // else(fabs(cur_node->dens+simu.mean_dens) > CWEB_DENSTHRESHOLD)
+                  
                 } // if(notboundary)
               } // for(cur_node)
             }
@@ -1635,21 +1667,21 @@ int main(int argc, char **argv)
     MPI_Reduce(&Nsheets,    &Nsheets_all,    1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&Nvoids,     &Nvoids_all,     1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 #endif
-
-      /* dump filling fractions */
+    
+    /* dump filling fractions */
 #ifdef WITH_MPI
-      if(global_mpi.rank == 0)
+    if(global_mpi.rank == 0)
 #endif
-      {
-          fprintf(stderr,"\nVolume Filling Fractions: (grid=%ld, LambdaThreshold=%g)\n",cur_grid->l1dim,LAMBDA_THRESHOLD);
-          fprintf(stderr,"=========================\n");
-          fprintf(stderr,"knots     = %g\n",(double)Nknots/(double)pow3(cur_grid->l1dim));
-          fprintf(stderr,"filaments = %g\n",(double)Nfilaments/(double)pow3(cur_grid->l1dim));
-          fprintf(stderr,"sheets    = %g\n",(double)Nsheets/(double)pow3(cur_grid->l1dim));
-          fprintf(stderr,"voids     = %g\n",(double)Nvoids/(double)pow3(cur_grid->l1dim));
-      }
+    {
+      fprintf(stderr,"\nVolume Filling Fractions: (grid=%ld, LambdaThreshold=%g)\n",cur_grid->l1dim,LAMBDA_THRESHOLD);
+      fprintf(stderr,"=========================\n");
+      fprintf(stderr,"knots     = %g\n",(double)Nknots/(double)pow3(cur_grid->l1dim));
+      fprintf(stderr,"filaments = %g\n",(double)Nfilaments/(double)pow3(cur_grid->l1dim));
+      fprintf(stderr,"sheets    = %g\n",(double)Nsheets/(double)pow3(cur_grid->l1dim));
+      fprintf(stderr,"voids     = %g\n",(double)Nvoids/(double)pow3(cur_grid->l1dim));
+    }
 #endif //LAMBDA_TH
-
+    
   } // for(cur_grid)
   ahf.time += time(NULL);
   

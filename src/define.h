@@ -12,10 +12,10 @@
  * but you can also opt for Dweb and Pweb
  * Note, the Dweb and Pweb results are *not* written into the ASCII file
  *=============================================================================*/
-//#define DWEB
-//#define DWEB_AK  // my own version using only 2nd order derivatives (not recommended)
 //#define PWEB
-//#define PWEB_AK  // my own version using only 2nd order derivatives (not recommended)
+//#define PWEB_WC  // Weiguang's version that though does not give credible results
+//#define DWEB
+//#define DWEB_AK  // my own version using only 2nd order derivatives
 
 /*=============================================================================
  * here we switch on/off various features of Cweb (i.e. DEFINEFLAGS)

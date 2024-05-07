@@ -1584,10 +1584,10 @@ void write_parameterfile()
 #else
         fprintf(fpparam,"PWEB                       \t\t0\n");
 #endif
-#ifdef PWEB_AK
-        fprintf(fpparam,"PWEB_AK                    \t\t1\n");
+#ifdef PWEB_WC
+        fprintf(fpparam,"PWEB_WC                    \t\t1\n");
 #else
-        fprintf(fpparam,"PWEB_AK                    \t\t0\n");
+        fprintf(fpparam,"PWEB_WC                    \t\t0\n");
 #endif
 #ifdef WITH_MPI
         fprintf(fpparam,"WITH_MPI                   \t\t1\n");
