@@ -13,9 +13,9 @@
  * Note, the Dweb and Pweb results are *not* written into the ASCII file
  *=============================================================================*/
 //#define PWEB
-//#define PWEB_WC  // Weiguang's version that though does not give credible results
+//#define PWEB_WC  // Weiguang's version that does not comply with sum(eigenvalues)=density
 //#define DWEB
-//#define DWEB_AK  // my own version using only 2nd order derivatives
+//#define DWEB_WC  // Weiguang's version
 
 /*=============================================================================
  * here we switch on/off various features of Cweb (i.e. DEFINEFLAGS)

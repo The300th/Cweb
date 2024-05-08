@@ -28,7 +28,7 @@ def read_CwebASCII(filename):
 #         https://docs.python.org/3/library/struct.html#format-characters
 #   for format options
 #==============================================================================
-def read_Cweb(filename, PWEB=False):
+def read_Cweb(filename):
     print('o read_Cweb():')
     print('   reading',filename)
     with open(filename, "rb") as file:
@@ -38,6 +38,10 @@ def read_Cweb(filename, PWEB=False):
         fileContent = file.read(4)                        # int32_t
         one = struct.unpack('i', fileContent)[0]
         print('       one     =',one)
+        
+        fileContent = file.read(4)                        # int32_t
+        Pweb = struct.unpack('i', fileContent)[0]
+        print('       Pweb    =',Pweb)
         
         fileContent = file.read(8)                        # uint64_t
         Nnodes = struct.unpack('L', fileContent)[0]
@@ -54,7 +58,7 @@ def read_Cweb(filename, PWEB=False):
         # read the actual Cweb[] matrix
         #-------------------------------
         Cweb = np.fromfile(file, dtype=np.float32)
-        if (PWEB==False):
+        if (Pweb==0):
             Cweb = np.reshape(Cweb,(Nnodes,22))           # 22 values per node
         else:
             Cweb = np.reshape(Cweb,(Nnodes,35))           # 35 values per node
@@ -68,7 +72,7 @@ def read_Cweb(filename, PWEB=False):
 #==============================================================================
 # Weiguang's routine to read a Cweb binary file
 #==============================================================================
-def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected=None):
+def readCweb(fileall, endian=None, UonGrid=None, quiet=None, selected=None):
     """
     readCweb(fileall,endian=None,UonGrid=None):
     read Cweb binary out puts
@@ -109,18 +113,12 @@ def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected
     } Cweb_t;
     """
 
-    if PWEB is None:
-        print('o readCweb():')
-    else:
-        print('o readCweb(PWEB=True):')
     print('   reading',fileall)
 
 
     if endian is None:
         endian = '='
     dims = 22
-    if PWEB:
-        dims += 13
     if UonGrid:
         dims += 1
 
@@ -128,12 +126,18 @@ def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected
         opf = open(fileall, 'rb')
 
         swap = struct.unpack(endian + 'i', opf.read(4))[0]
+        Pweb = struct.unpack(endian + 'i', opf.read(4))[0]
         Nnodes = struct.unpack(endian + 'q', opf.read(8))[0]
         L = struct.unpack(endian + 'q', opf.read(8))[0]
         BoxSize = struct.unpack(endian + 'f', opf.read(4))[0]
+        
+        if Pweb==1:
+            dims += 13
+            
         if quiet:
             quiet = True
         else:
+            print("       Pweb    = ", Pweb)
             print("       Nnodes  = ", Nnodes)
             print("       L       = ", L)
             print("       Boxsize = ", BoxSize)
@@ -156,12 +160,18 @@ def readCweb(fileall, endian=None, UonGrid=None, PWEB=None, quiet=None, selected
                 raise AttributeError('Please check and try again')
 
             swap = struct.unpack(endian + 'i', opf.read(4))[0]
+            Pweb = struct.unpack(endian + 'i', opf.read(4))[0]
             Nnodes = struct.unpack(endian + 'q', opf.read(8))[0]
             L = struct.unpack(endian + 'q', opf.read(8))[0]
             BoxSize = struct.unpack(endian + 'f', opf.read(4))[0]
+            
+            if Pweb==1:
+                dims += 13
+                
             if quiet:
                 quiet = True
             else:
+                print("       Pweb    = ", Pweb)
                 print("       Nnodes  = ", Nnodes)
                 print("       L       = ", L)
                 print("       Boxsize = ", BoxSize)

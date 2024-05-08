@@ -919,13 +919,18 @@ int main(int argc, char **argv)
 #else
     fpout=fopen(outfile,"wb");
     fwrite(&one, sizeof(int32_t), 1, fpout);
+#ifdef PWEB  // add a flag to output file that indicates if PWEB values have been written or not
+    one = 1;
+#else
+    one = 0;
+#endif
+    fwrite(&one, sizeof(int32_t), 1, fpout);
     tmp_uint64  = (uint64_t)Nnodes_written;  // placeholder for the time being, will be overwritten at end
     FWRITE_TMP_UINT64;
     tmp_uint64  = (uint64_t)cur_grid->l1dim;
     FWRITE_TMP_UINT64;
     tmp_float   = simu.boxsize;
     FWRITE_TMP_FLOAT;
-    // we could/should also add tags that indicate whether the file contains DWEB/PWEB or not...
 #endif
     
     fprintf(stderr,"Calculating Vweb on %8ld grid (writing results to %s) ... ",cur_grid->l1dim,outfile);
@@ -1655,7 +1660,7 @@ int main(int argc, char **argv)
     
 #ifndef WRITE_ASCII
     /* correct number of written nodes */
-    fseek(fpout,(long)sizeof(int32_t),SEEK_SET); // skip the "one"
+    fseek(fpout,2*(long)sizeof(int32_t),SEEK_SET); // skip the "one"
     tmp_uint64 = Nnodes_written;
     FWRITE_TMP_UINT64;
 #endif
