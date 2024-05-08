@@ -1574,10 +1574,10 @@ void write_parameterfile()
 #else
         fprintf(fpparam,"DWEB                       \t\t0\n");
 #endif
-#ifdef DWEB_AK
-        fprintf(fpparam,"DWEB_AK                    \t\t1\n");
+#ifdef DWEB_WC
+        fprintf(fpparam,"DWEB_WC                    \t\t1\n");
 #else
-        fprintf(fpparam,"DWEB_AK                    \t\t0\n");
+        fprintf(fpparam,"DWEB_WC                    \t\t0\n");
 #endif
 #ifdef PWEB
         fprintf(fpparam,"PWEB                       \t\t1\n");
