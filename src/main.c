@@ -1080,7 +1080,12 @@ int main(int argc, char **argv)
                       if(lambda2 > LAMBDA_THRESHOLD && lambda3 < LAMBDA_THRESHOLD) Nfilaments++;
                       if(lambda1 > LAMBDA_THRESHOLD && lambda2 < LAMBDA_THRESHOLD) Nsheets++;
                       if(lambda1 < LAMBDA_THRESHOLD)                               Nvoids++;
-                      
+                     
+                     
+                     
+                     //================================
+                     // ALL THE PWEB/DWEB calculations
+                     //================================
 #if defined(DWEB) || defined(PWEB)
                       /* Now we use mhd nodes to make proper derivations */
                       for(i = 0; i <= 4; i++)
@@ -1089,106 +1094,9 @@ int main(int argc, char **argv)
                             mhd_nodes[i][j][k]=NULL;
                           }
                       get_MHDnodes(cur_grid, cur_pquad, z, y, x, mhd_nodes);
-                      //                         haveneighbours = test_mhd(mhd_nodes);
-                      haveneighbours = TRUE; // this test only makes sense for AMR grids, which are currently not implemented
+                      // haveneighbours = test_mhd(mhd_nodes); // this test only makes sense for AMR grids, which are currently not implemented
+                      haveneighbours = TRUE;
 #endif
-                      
-#ifdef DWEB  // doese DWEB actually make sense at all!?!?!
-                      for(i = 0; i <= 2; i++)
-                        for(j = 0; j <= 2; j++)
-                          dtensor[i][j] = 0;
-                      dambda1 = -1000.0;
-                      dambda2 = -1000.0;
-                      dambda3 = -1000.0;
-                      
-                      converged = 0;
-                      
-#ifdef DWEB_AK // my own version
-                      /* Old version only using the direct neighbours only, no fancy derivatives... */
-                      dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
-                      dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
-                      dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
-                      
-                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
-                      dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
-                      dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
-                      dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
-                      
-                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
-                      //                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
-                      //                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
-                      //                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
-                      //                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
-                      //                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
-                      //                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
-                      
-                      dtensor[1][0] = dtensor[0][1];
-                      dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
-                      dtensor[2][1] = dtensor[1][2];
-                      
-                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
-                      for(i = 0; i <= 2; i++)
-                        for(j = 0; j <= 2; j++)
-                          dtensor[i][j] *= rho_fac;
-                      
-                      converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
-#else // DWEB_AK
-                      Wg        = 0.0;
-                      
-                      if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
-                      {
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++)
-                            for(k = 0; k <= 2; k++){
-                              dFdx[i][j][k]=0;
-                              dFdy[i][j][k]=0;
-                              dFdz[i][j][k]=0;
-                            }
-                        /* calculate the first order derivation*/
-                        for(i = 1; i <= 3; i++)
-                          for(j = 1; j <= 3; j++)
-                            for (k = 1; k<=3; k++){
-                              dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
-                              dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
-                              dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
-                            }
-                        /* calculate the second order derivation*/
-                        for(i = 0; i <= 2; i++)
-                          for(j = 0; j <= 2; j++){
-                            //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
-                            //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
-                            //                            Wg += 1./distance2;
-                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
-                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
-                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
-                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
-                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
-                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
-                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
-                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
-                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
-                          }
-                        //                        for(i = 0; i <= 2; i++)
-                        //                          for(j = 0; j <= 2; j++)
-                        //                            dtensor[i][j] /= Wg;
-                        converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
-                        
-                      }  //if have neighbours for mhd_nodes
-                      
-#endif // DWEB_AK
-                      
-#ifdef IGNORE_JACOBI_NONCONVERGENCE
-                      if(converged == 0){
-                        fprintf(stderr," ---> (Dweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
-                                x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
-                        dambda1 = dambda2 = dambda3 = -3.1415;
-                        dtensor[X][X] = dtensor[X][Y] = dtensor[X][Z] = -3.1415;
-                        dtensor[X][Y] = dtensor[Y][Y] = dtensor[Y][Z] = -3.1415;
-                        dtensor[X][Z] = dtensor[Y][Z] = dtensor[Z][Z] = -3.1415;
-                      }
-#endif
-                      
-#endif // DWEB
                       
                       
 #ifdef PWEB
@@ -1299,10 +1207,10 @@ int main(int argc, char **argv)
                       ptensor[2][0] = ptensor[0][2]; // the Hessian matrix is symmetric
                       ptensor[2][1] = ptensor[1][2];
                       
-                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      // convert back to internal units (note, dx, etc. already contain x_fac)
                       for(i = 0; i <= 2; i++)
                         for(j = 0; j <= 2; j++)
-                          ptensor[i][j] *= pow2(x_fac); // this brings it back to (most meaningful) internal units
+                          ptensor[i][j] *= pow2(x_fac);
                       
 #ifdef TEST_PWEB
                       fprintf(stderr,"%g %g %g\n",
@@ -1335,6 +1243,105 @@ int main(int argc, char **argv)
                       
 #endif // PWEB
                       
+#ifdef DWEB  // doese DWEB actually make sense at all!?!?!
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          dtensor[i][j] = 0;
+                      dambda1 = -1000.0;
+                      dambda2 = -1000.0;
+                      dambda3 = -1000.0;
+                      
+                      converged = 0;
+                      
+#ifdef DWEB_WC // my own version
+                      Wg        = 0.0;
+                      
+                      if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.
+                      {
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++)
+                            for(k = 0; k <= 2; k++){
+                              dFdx[i][j][k]=0;
+                              dFdy[i][j][k]=0;
+                              dFdz[i][j][k]=0;
+                            }
+                        /* calculate the first order derivation*/
+                        for(i = 1; i <= 3; i++)
+                          for(j = 1; j <= 3; j++)
+                            for (k = 1; k<=3; k++){
+                              dFdx[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j][k+1]->dens - mhd_nodes[i][j][k-1]->dens) / twodx;
+                              dFdy[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i][j+1][k]->dens - mhd_nodes[i][j-1][k]->dens) / twody;
+                              dFdz[i-1][j-1][k-1] = rho_fac*(mhd_nodes[i+1][j][k]->dens - mhd_nodes[i-1][j][k]->dens) / twodz;
+                            }
+                        /* calculate the second order derivation*/
+                        for(i = 0; i <= 2; i++)
+                          for(j = 0; j <= 2; j++){
+                            //                            distance2 = pow((i - 1) * (i - 1) + (j - 1) * (j - 1), 0.5);
+                            //                            distance2 = (1 + distance2) * (1 + distance2);  //weight = 1/(1+d)^2
+                            //                            Wg += 1./distance2;
+                            dtensor[0][0] += (dFdx[i][j][2] - dFdx[i][j][0]) / twodx;// / distance2 * x_fac;  // d^2F/dx^2
+                            dtensor[1][1] += (dFdy[i][2][j] - dFdy[i][0][j]) / twody;// / distance2 * x_fac;  // d^2F/dy^2
+                            dtensor[2][2] += (dFdz[2][i][j] - dFdz[0][i][j]) / twodz;// / distance2 * x_fac;  // d^2F/dz^2
+                            dtensor[0][1] += (dFdx[i][2][j] - dFdx[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dx)/dy
+                            dtensor[0][2] += (dFdx[2][i][j] - dFdx[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dx)/dz
+                            dtensor[1][0] += (dFdy[i][j][2] - dFdy[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dy)/dx
+                            dtensor[1][2] += (dFdy[2][i][j] - dFdy[0][i][j]) / twodz;// / distance2 * x_fac;  // d(dF/dy)/dz
+                            dtensor[2][0] += (dFdz[i][j][2] - dFdz[i][j][0]) / twodx;// / distance2 * x_fac;  // d(dF/dz)/dx
+                            dtensor[2][1] += (dFdz[i][2][j] - dFdz[i][0][j]) / twody;// / distance2 * x_fac;  // d(dF/dz)/dy
+                          }
+                        //                        for(i = 0; i <= 2; i++)
+                        //                          for(j = 0; j <= 2; j++)
+                        //                            dtensor[i][j] /= Wg;
+                        converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+                        
+                      }  //if have neighbours for mhd_nodes
+                      
+#else // DWEB_WC
+                      /* Old version only using the direct neighbours only, no fancy derivatives... */
+                      dtensor[0][0] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][1][0]->dens))/dx/dx;
+                      dtensor[1][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[1][0][1]->dens))/dy/dy; // this is 2nd order accurate
+                      dtensor[2][2] = ((tsc_nodes[2][1][1]->dens - tsc_nodes[1][1][1]->dens) - (tsc_nodes[1][1][1]->dens - tsc_nodes[0][1][1]->dens))/dz/dz;
+                      
+                      /* directly use the second order derivative to calculate d^2 rho/dx/dy. */
+                      dtensor[0][1] = ((tsc_nodes[1][2][2]->dens - tsc_nodes[1][0][2]->dens)/twody - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][0][0]->dens)/twody)/twodx;
+                      dtensor[0][2] = ((tsc_nodes[2][1][2]->dens - tsc_nodes[0][1][2]->dens)/twodz - (tsc_nodes[2][1][0]->dens - tsc_nodes[0][1][0]->dens)/twody)/twodx; // this is 2nd order accurate (A.10 in https://onlinelibrary.wiley.com/doi/pdf/10.1002/9781119083405.app1)
+                      dtensor[1][2] = ((tsc_nodes[2][2][1]->dens - tsc_nodes[0][2][1]->dens)/twodz - (tsc_nodes[2][0][1]->dens - tsc_nodes[0][0][1]->dens)/twody)/twody;
+                      
+                      /* using the mean of first order derivative to calculate d^2 rho/dx/dy. */
+                      //                       dtensor[0][1] = ((tsc_nodes[1][2][1]->dens - tsc_nodes[0][2][1]->dens) - (tsc_nodes[1][0][1]->dens - tsc_nodes[0][0][1]->dens) +
+                      //                                        (tsc_nodes[2][2][1]->dens - tsc_nodes[1][2][1]->dens) - (tsc_nodes[2][0][1]->dens - tsc_nodes[1][0][1]->dens))/dx/dy/4.0;
+                      //                       dtensor[0][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[0][1][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[0][1][0]->dens) +
+                      //                                        (tsc_nodes[2][1][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[2][1][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dz/4.0;
+                      //                       dtensor[1][2] = ((tsc_nodes[1][1][2]->dens - tsc_nodes[1][0][2]->dens) - (tsc_nodes[1][1][0]->dens - tsc_nodes[1][0][0]->dens) +
+                      //                                        (tsc_nodes[1][2][2]->dens - tsc_nodes[1][1][2]->dens) - (tsc_nodes[1][2][0]->dens - tsc_nodes[1][1][0]->dens))/dx/dy/4.0;
+                      
+                      dtensor[1][0] = dtensor[0][1];
+                      dtensor[2][0] = dtensor[0][2]; // the Hessian matrix is symmetric
+                      dtensor[2][1] = dtensor[1][2];
+                      
+                      // add the missing conversion to physical units (note, dx/dy/dz are already in physical units!)
+                      for(i = 0; i <= 2; i++)
+                        for(j = 0; j <= 2; j++)
+                          dtensor[i][j] *= rho_fac;
+                      
+                      converged = get_axes(dtensor, &dambda1, &dambda2, &dambda3);
+#endif // DWEB_WC
+                      
+#ifdef IGNORE_JACOBI_NONCONVERGENCE
+                      if(converged == 0){
+                        fprintf(stderr," ---> (Dweb) at this grid position x=%ld y=%ld z=%ld dens=%g densVx=%g densVy=%g densVz=%g\n",
+                                x,y,z,cur_node->dens,cur_node->densV[X],cur_node->densV[Y],cur_node->densV[Z]);
+                        dambda1 = dambda2 = dambda3 = -3.1415;
+                        dtensor[X][X] = dtensor[X][Y] = dtensor[X][Z] = -3.1415;
+                        dtensor[X][Y] = dtensor[Y][Y] = dtensor[Y][Z] = -3.1415;
+                        dtensor[X][Z] = dtensor[Y][Z] = dtensor[Z][Z] = -3.1415;
+                      }
+#endif
+                      
+#endif // DWEB
+                      
+
+
                       /* write information to output file */
                       Nnodes_written++;
                       
