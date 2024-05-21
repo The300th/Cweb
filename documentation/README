@@ -3,13 +3,16 @@
  (the code uses the Cweb and hence the present naming convention)
 ==================================================================
 
-- the mode of operation is in fact identical to AMIGA's Halo Finder (AHF) which is described in http://popia.ft.uam.es/AHF/files/AHF.pdf (all DEFINEFLAGS and features are present in Cweb too, and should be used in the same way.)
+
+WARNING: as no proper user's guide exists (yet), we strongly recommend to register as a user to alexander.knebe@uam.es who will also be more than ahppy to help with all possible problems...
+
+REMARK: the mode of operation is in fact identical to AMIGA's Halo Finder (AHF) which is described in http://popia.ft.uam.es/AHF/files/AHF.pdf (all DEFINEFLAGS and features are present in Cweb too, and should be used in the same way.)
 
 
 Cweb
 ====
 
-- based upon AHF and its adaptive mesh refinement capabilities Cweb has been built: a code calculating the eigenvalues and eigenvectors of the velocity shear tensor in every grid cells of the full AMR hierarchy.
+- a code calculating the eigenvalues and eigenvectors of the velocity shear tensor in every grid cells
 
 - check http://arxiv.org/abs/1201.3367 for the physical details (paper can also be found inside documentation/)
 
@@ -17,6 +20,7 @@ Cweb
 	- how to compile the code and 
 	- how to feed your favourite simulation into it.
 
+- while the whole AMR infrastructure is present, at the moment only regular grids are supported
 
 
 just some random notes that might help to get the code up-and-running quickly:
@@ -28,15 +32,14 @@ Makefile.config:
 	-DGAS_PARTICLES	if there are gas and/or star particles in your simulation
 - DMfocus will ignore all gas and star particles and only keep (all) DM particles for the analysis
 
-- DWRITE_GRIDDATA will write a file (with meaningful name) that contains all the density fields *before* any smoothing
-- DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing)
----> reading/writing grid data has not been tested yet for the MPI version
-
-GENERAL SUGGESTION: compile Cweb_WRITEGRIDATA and Cweb_READGRIDDATA
+- DWRITE_GRIDDATA will write a file (with meaningful name) that contains all the density fields *before* any smoothing; this file will be written into the same place as the input file (irrespective of what you put as outfile_prefix)
+- DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing); the file is expected to be found where ic_filename is located
+- GENERAL SUGGESTION: compile two Cweb version, i.e. Cweb_WRITEGRIDATA and Cweb_READGRIDDATA
+- the WRITE_ASCII option only writes Vweb data, even if you compiled the code with, for instance, PWEB
 
 - you can make the following codes:
 	$ make Cweb
-	$ make Cweb2ascii
+	$ make Cweb2ascii   -> should be obsolete as read_Cweb.py/plot_Cweb.py should be the favourite choice for post-processing
 	$ make Cwebhalos
 
   where Cweb is the main code, Cweb2ascii converts the binary output of Cweb to ASCII, Cwebhalos correlates the output of Cweb to AHF's *_halos file
@@ -84,5 +87,5 @@ analysis/Cwebhalos.c:
 
 
 ====>
-WHILE Cweb COULD BE USED AS A BLACK BOX, THE POST-PROCESSING AND ANAYSIS OF ITS OUTPUT FILES REQUIRE THE USER TO LOOK INTO Cweb2ascii.c and Cwebhalos.c!
+WHILE Cweb COULD BE USED AS A BLACK BOX, THE POST-PROCESSING AND ANALYSIS OF ITS OUTPUT FILES REQUIRE THE USER TO LOOK INTO Cweb2ascii.c and Cwebhalos.c!
 ====>
