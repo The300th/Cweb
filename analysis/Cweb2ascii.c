@@ -64,6 +64,13 @@ typedef struct {
   float lambda2;
   float lambda3;
   float local_shear[3][3];
+#ifdef PWEB
+  float pot;
+  float pambda1;
+  float pambda2;
+  float pambda3;
+  float pocal_shear[3][3];
+#endif
 #ifdef UonGrid
   float u;
 #endif
@@ -263,7 +270,7 @@ void  convert_Cweb(FILE *fpin, FILE *fpout)
   uint64_t numHalos;
   uint32_t numColumns;
   uint64_t i;
-  int32_t  one;
+  int32_t  one, Pweb;
   int      swap=0;
   Cweb_t   Cweb;
   uint64_t Nnodes;
@@ -275,6 +282,7 @@ void  convert_Cweb(FILE *fpin, FILE *fpout)
   if(one == 1)    swap = 0;
   else            swap = 1;
 
+  fread(&Pweb, sizeof(int32_t), 1, fpin);
   ReadUInt64(fpin, &Nnodes,   swap);
   ReadUInt64(fpin, &L,        swap);
   ReadFloat (fpin, &BoxSize,  swap);
@@ -316,6 +324,23 @@ void  convert_Cweb(FILE *fpin, FILE *fpout)
     ReadFloat(fpin, &(Cweb.local_shear[0][2]),     swap);
     ReadFloat(fpin, &(Cweb.local_shear[1][2]),     swap);
     ReadFloat(fpin, &(Cweb.local_shear[2][2]),     swap);
+#ifdef PWEB
+    if(Pweb) {
+      ReadFloat(fpin, &Cweb.pot,     swap);
+      ReadFloat(fpin, &Cweb.pambda1,     swap);
+      ReadFloat(fpin, &Cweb.pambda2,     swap);
+      ReadFloat(fpin, &Cweb.pambda3,     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[0][0]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[1][0]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[2][0]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[0][1]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[1][1]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[2][1]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[0][2]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[1][2]),     swap);
+      ReadFloat(fpin, &(Cweb.pocal_shear[2][2]),     swap);
+    }
+#endif
 #ifdef UonGrid
     ReadFloat(fpin, &(Cweb.u),         swap);
 #endif

@@ -80,7 +80,7 @@ def readCweb(fileall, endian=None, UonGrid=None, quiet=None, selected=None):
              last 4 charaters "Cweb" means read only one file
              else try to read multi-files by adding ".000x.Cweb" to fileall
     endian:  default '='
-    UonGrid: default 34
+    UonGrid: default 35
     quiet  : default False
     selected:select Return data colomn.
         e.g. selected=[0,1,2] will Return x,y,z
@@ -102,13 +102,14 @@ def readCweb(fileall, endian=None, UonGrid=None, quiet=None, selected=None):
         float lambda3;12
         float local_shear[3][3];13:22
     #ifdef PWEB
-        float lambda1;22
-        float lambda2;23
-        float lambda3;24
-        float local_shear[3][3];25:34
+        float pot;23
+        float lambda1;24
+        float lambda2;25
+        float lambda3;26
+        float local_shear[3][3];27:35
     #endif
     #ifdef UonGrid
-            float u;34
+            float u;36
     #endif
     } Cweb_t;
     """
