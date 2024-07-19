@@ -17,6 +17,7 @@
 #include "libutility/utility.h"
 #include "libamr_serial/amr_serial.h"
 #include "libgravity/gravity.h"
+#include "libio/xstring.h"
 
 
 #ifdef WITH_MPI
@@ -784,9 +785,13 @@ int main(int argc, char **argv)
    * at this point we are able to read griddata into grid_list
    * (only works for the serial version as a single files is required)
    *=========================================================================================*/
-#ifdef READ_GRIDDATA
   // now we can read the grid data
+#ifdef READ_GRIDDATA
+#ifdef READ_GRIDDATA_LOCAL
+  read_griddata(&grid_list, &no_grids, xbasename(global_io.params->icfile_name));
+#else
   read_griddata(&grid_list, &no_grids, global_io.params->icfile_name);
+#endif
   //  write_griddata(&grid_list, &no_grids, global_io.params->icfile_name);
   //  exit(0);
   
@@ -840,12 +845,17 @@ int main(int argc, char **argv)
    * (only works for the serial version as a single files is written)
    *=========================================================================================*/
 #ifdef WRITE_GRIDDATA
+#ifdef WRITE_GRIDDATA_LOCAL
+  write_griddata(&grid_list, &no_grids, xbasename(global_io.params->icfile_name));
+#else
   write_griddata(&grid_list, &no_grids, global_io.params->icfile_name);
+#endif
 #ifdef WRITE_GRIDDATA_TERMINATE
   fprintf(stderr,"mesh data written, aborting now\n");
   exit(0);
 #endif
 #endif
+
   
   
   
@@ -1258,7 +1268,7 @@ int main(int argc, char **argv)
                       
                       converged = 0;
                       
-#ifdef DWEB_WC // my own version
+#ifdef DWEB_WC // Weiguang's version
                       Wg        = 0.0;
                       
                       if(haveneighbours == TRUE)  //Note here that this assumes tsc_nodes always have neighbours when mhd_nodes have neighbours.

@@ -34,6 +34,8 @@ Makefile.config:
 
 - DWRITE_GRIDDATA will write a file (with meaningful name) that contains all the density fields *before* any smoothing; this file will be written into the same place as the input file (irrespective of what you put as outfile_prefix)
 - DREAD_GRIDDATA will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing); the file is expected to be found where ic_filename is located
+- DWRITE_GRIDDATA_LOCAL will write a file (with meaningful name) that contains all the density fields *before* any smoothing; this file will be written into the current working directory this time
+- DREAD_GRIDDATA_LOCAL will read exactly that file in again (no need to change the ic_filename!), speeding up any analysis  based upon the same density fields (e.g. different smoothing); the file is expected to be found in the current working directory
 - GENERAL SUGGESTION: compile two Cweb version, i.e. Cweb_WRITEGRIDATA and Cweb_READGRIDDATA
 - the WRITE_ASCII option only writes Vweb data, even if you compiled the code with, for instance, PWEB
 

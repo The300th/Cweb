@@ -67,14 +67,21 @@
 #define BCASTHEADER                  // only one MPI task will read all the relevant header information and then broadcast
 //#define NCPUREADING_EQ_NFILES        // this should speed up I/O of multiple snapshot files, but only works for this condition
 
-#ifdef DWEB_AK
+#ifdef DWEB_WC
 #define DWEB
 #endif
 
-#ifdef PWEB_AK
+#ifdef PWEB_WC
 #define PWEB
 #endif
 
+#ifdef WRITE_GRIDDATA_LOCAL
+#define WRITE_GRIDDATA
+#endif
+
+#ifdef READ_GRIDDATA_LOCAL
+#define READ_GRIDDATA
+#endif
 /*--------------------------------------------------
  *           -DWITH_MPI or -DAHFrestart
  *--------------------------------------------------*/
