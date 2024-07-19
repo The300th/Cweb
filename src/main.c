@@ -899,15 +899,15 @@ int main(int argc, char **argv)
   for(cur_grid=global.dom_grid;cur_grid<global.dom_grid+no_grids;cur_grid++)
   {
     
-    // we are smoothing all densities with a Gaussian filter (which only makes sense when the filter is larger than the grid-spacing)
+    // we are smoothing all densities with a filter (which only makes sense when the filter is larger than the grid-spacing)
     if(Rsmooth > 2*simu.boxsize/(double)cur_grid->l1dim) {
 #ifdef WITH_MPI
       sprintf(outfile,"%s.%05ld.Rs=%4.2lf.MPIrank%04d.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim,Rsmooth,global_mpi.rank);
 #else
       sprintf(outfile,"%s.%05ld.Rs=%4.2lf.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim,Rsmooth);
 #endif
-      fprintf(stderr,"Gaussian smoothing %ld grid (Rsmooth=%f [Mpc/h])... ",cur_grid->l1dim,Rsmooth);
-      Gaussian_smooth_gridFFT(cur_grid, Rsmooth);
+      fprintf(stderr,"Smoothing %ld grid (Rsmooth=%f [Mpc/h])... ",cur_grid->l1dim,Rsmooth);
+      Smooth_gridFFT(cur_grid, Rsmooth);
       fprintf(stderr,"done\n");
     }
     else {

@@ -22,9 +22,9 @@
  *       If memoy becomes an issue, it should be easy to do the smoothing of the fields sequentially
  *=============================================================================*/
 #ifdef PWEB
-void smooth_arrays(flouble *parray, flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
+void Gauss_smooth_arrays(flouble *parray, flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
 #else
-void smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
+void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
 #endif
 {
    double        Filter, sf, sf2;
@@ -156,14 +156,14 @@ void smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble 
 
 
 /*=============================================================================
- * Gaussian_smooth_gridFFT()
+ * Smooth_gridFFT()
  *
  * wrapper for smooting all density fields
  * note, we are smooting all fields using the same for-loops,
  *       but this means to allocate as many temporary l1dim^3 grids as needed
  *       if memory becomes and issue, change the structure here...
  *=============================================================================*/
-void Gaussian_smooth_gridFFT(gridls *cur_grid, double Rsmooth)
+void Smooth_gridFFT(gridls *cur_grid, double Rsmooth)
 {
    flouble *dens_array, *densVx_array, *densVy_array, *densVz_array; /* density array pointers */
 #ifdef PWEB
@@ -182,7 +182,7 @@ void Gaussian_smooth_gridFFT(gridls *cur_grid, double Rsmooth)
    /* generate complex (!) density arrays for FFT */
    if((dens_array = (flouble *) calloc(FFTarray_length, sizeof(flouble))) == NULL)
    {
-      fprintf(io.logfile,"Gaussian_smooth_gridFFT: could not allocate density array for FFT\n");
+      fprintf(io.logfile,"Smooth_gridFFT: could not allocate density array for FFT\n");
       fflush(io.logfile);
       fclose(io.logfile);
       exit(1);
@@ -190,21 +190,21 @@ void Gaussian_smooth_gridFFT(gridls *cur_grid, double Rsmooth)
    /* generate complex (!) density arrays for FFT */
    if((densVx_array = (flouble *) calloc(FFTarray_length, sizeof(flouble))) == NULL)
    {
-      fprintf(io.logfile,"Gaussian_smooth_gridFFT: could not allocate density array for FFT\n");
+      fprintf(io.logfile,"Smooth_gridFFT: could not allocate density array for FFT\n");
       fflush(io.logfile);
       fclose(io.logfile);
       exit(1);
    }
    if((densVy_array = (flouble *) calloc(FFTarray_length, sizeof(flouble))) == NULL)
    {
-      fprintf(io.logfile,"Gaussian_smooth_gridFFT: could not allocate density array for FFT\n");
+      fprintf(io.logfile,"Smooth_gridFFT: could not allocate density array for FFT\n");
       fflush(io.logfile);
       fclose(io.logfile);
       exit(1);
    }
    if((densVz_array = (flouble *) calloc(FFTarray_length, sizeof(flouble))) == NULL)
    {
-      fprintf(io.logfile,"Gaussian_smooth_gridFFT: could not allocate density array for FFT\n");
+      fprintf(io.logfile,"Smooth_gridFFT: could not allocate density array for FFT\n");
       fflush(io.logfile);
       fclose(io.logfile);
       exit(1);
@@ -212,7 +212,7 @@ void Gaussian_smooth_gridFFT(gridls *cur_grid, double Rsmooth)
 #ifdef PWEB
    if((pot_array = (flouble *) calloc(FFTarray_length, sizeof(flouble))) == NULL)
    {
-      fprintf(io.logfile,"Gaussian_smooth_gridFFT: could not allocate density array for FFT\n");
+      fprintf(io.logfile,"Smooth_gridFFT: could not allocate density array for FFT\n");
       fflush(io.logfile);
       fclose(io.logfile);
       exit(1);
@@ -250,14 +250,14 @@ void Gaussian_smooth_gridFFT(gridls *cur_grid, double Rsmooth)
    }
    
    
-   /* solve by FFT */
+   /* the actual smoothing is done on the temporary grids */
 #ifdef PWEB
-   smooth_arrays(pot_array, dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
+   Gauss_smooth_arrays(pot_array, dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
 #else
-   smooth_arrays(dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
+   Gauss_smooth_arrays(dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
 #endif
    
-   /* fill node potential values */
+   /* copy back to original grid */
 #ifdef WITH_OPENMP
 #ifdef PWEB
 #pragma omp parallel private(k, j, i, cur_cquad, cur_nquad, cur_node) shared(cur_pquad, dens_array, densVx_array, densVy_array, densVz_array, l1dim, pot_array)
