@@ -111,14 +111,18 @@ void smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble 
             // apply filter to all arrays
             darray[Re(l,m,n,l1dim)] *= Filter;
             darray[Im(l,m,n,l1dim)] *= Filter;
+            
             vxarray[Re(l,m,n,l1dim)] *= Filter;
             vxarray[Im(l,m,n,l1dim)] *= Filter;
+            
             vyarray[Re(l,m,n,l1dim)] *= Filter;
             vyarray[Im(l,m,n,l1dim)] *= Filter;
+            
             vzarray[Re(l,m,n,l1dim)] *= Filter;
             vzarray[Im(l,m,n,l1dim)] *= Filter;
 #ifdef PWEB
             parray[Re(l,m,n,l1dim)] *= Filter;
+            parray[Im(l,m,n,l1dim)] *= Filter;
 #endif
          }
       }
