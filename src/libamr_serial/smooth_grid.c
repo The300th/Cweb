@@ -14,6 +14,142 @@
 #include "../libutility/utility.h"
 
 /*=============================================================================
+ * TopHat smoothing
+ *
+ * done in Fourier space...
+ * NOTE, we smooth all possible arrays in the same loop!
+ *       This is highly memory consuming, but much faster
+ *       If memoy becomes an issue, it should be easy to do the smoothing of the fields sequentially
+ *=============================================================================*/
+#ifdef PWEB
+void TopHat_smooth_arrays(flouble *parray, flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
+#else
+void TopHat_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
+#endif
+{
+   double        Filter;
+   double        FFTnorm;
+   double        kx, ky, kz, ksquare, k_box, kf, x;
+   long          *k;
+   long          k_dim, k_nyq;
+   long          i, l, m, n;
+   int           forward=1, backward=-1;
+   unsigned long nn[NDIM];
+   
+   // TopHat variables
+   double        Rsmooth_box = Rsmooth/simu.boxsize; // smoothing scale in box units
+   
+   /* dimensions of grid */
+   nn[0] = l1dim;
+   nn[1] = l1dim;
+   nn[2] = l1dim;
+   k_dim = l1dim;
+   k_nyq = l1dim/2;
+   
+   /* k-modes in box units */
+   k = (long*) calloc(l1dim,sizeof(long));
+   for(i=0; i<l1dim; i++)
+   {
+      if(i <= k_nyq)
+         k[i] = i;
+      else
+         k[i] = -(l1dim-i);
+   }
+   
+   /* fourn normalisation factor */
+   FFTnorm = (double)pow3(l1dim);
+   
+   /* fundamental wave in box units (B=1): kf = 2*pi */
+   kf = TWOPI;
+      
+   /* forward FFT of all arrays */
+   fourn(darray-1, nn-1, NDIM, forward);
+   fourn(vxarray-1, nn-1, NDIM, forward);
+   fourn(vyarray-1, nn-1, NDIM, forward);
+   fourn(vzarray-1, nn-1, NDIM, forward);
+#ifdef PWEB
+   fourn(parray-1, nn-1, NDIM, forward);
+#endif
+   
+   /* loop over all cells, applying the smoothing function */
+#ifdef WITH_OPENMP
+#pragma omp parallel for private(n,m,l,kz,ky,kx,ksquare,k_box,Filter) shared(darray,vxarray,vyarray,vzarray,l1dim,k_dim,kf,k) schedule(static)
+#endif
+   for(n = 0; n < k_dim; n++)
+   {
+      kz = kf * k[n];
+      
+      for(m = 0; m < k_dim; m++)
+      {
+         ky = kf * k[m];
+         
+         for(l = 0; l < k_dim; l++)
+         {
+            kx = kf * k[l];
+            
+            // k in box units
+            ksquare = (kx * kx + ky * ky + kz * kz);
+            k_box   = sqrt(ksquare);
+            
+            // argument of window function
+            x = k_box*Rsmooth_box;
+            
+            // TopHat filter:
+            if(k_box > 0.0)
+              Filter = 3.0*(sin(x)-x*cos(x))/pow3(x);
+            else
+              Filter = 1.0;
+            
+//            fprintf(stderr,"%g %g (%g %g %g)\n",k_box,Filter,kx,ky,kz);
+                        
+            // apply filter to all arrays
+            darray[Re(l,m,n,l1dim)] *= Filter;
+            darray[Im(l,m,n,l1dim)] *= Filter;
+            
+            vxarray[Re(l,m,n,l1dim)] *= Filter;
+            vxarray[Im(l,m,n,l1dim)] *= Filter;
+            
+            vyarray[Re(l,m,n,l1dim)] *= Filter;
+            vyarray[Im(l,m,n,l1dim)] *= Filter;
+            
+            vzarray[Re(l,m,n,l1dim)] *= Filter;
+            vzarray[Im(l,m,n,l1dim)] *= Filter;
+#ifdef PWEB
+            parray[Re(l,m,n,l1dim)] *= Filter;
+            parray[Im(l,m,n,l1dim)] *= Filter;
+#endif
+         }
+      }
+   }
+   
+   
+   /* backward FFT */
+   fourn(darray-1, nn-1, NDIM, backward);
+   fourn(vxarray-1, nn-1, NDIM, backward);
+   fourn(vyarray-1, nn-1, NDIM, backward);
+   fourn(vzarray-1, nn-1, NDIM, backward);
+#ifdef PWEB
+   fourn(parray-1, nn-1, NDIM, backward);
+#endif
+   
+   /* normalize FFT output */
+   for(i=0; i<2*l1dim*l1dim*l1dim; i++)
+   {
+      darray[i] /= FFTnorm;
+      vxarray[i] /= FFTnorm;
+      vyarray[i] /= FFTnorm;
+      vzarray[i] /= FFTnorm;
+#ifdef PWEB
+      parray[i] /= FFTnorm;
+#endif
+   }
+   
+   /* delete k-array again */
+   free(k);
+}
+
+
+/*=============================================================================
  * Gaussian smoothing
  *
  * done in Fourier space...
@@ -27,7 +163,7 @@ void Gauss_smooth_arrays(flouble *parray, flouble *darray, flouble *vxarray, flo
 void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, flouble *vzarray, long l1dim, double Rsmooth)
 #endif
 {
-   double        Filter, sf, sf2;
+   double        Filter;
    double        FFTnorm;
    double        kx, ky, kz, ksquare, kf;
    long          *k;
@@ -38,7 +174,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    double        A, B; // short-cuts for constant factors
    
    // Gaussian variables
-   double        sigma        = 1.0;                               // sigma of Gaussian filter in box units
+   double        sigma        = 1.0/(double)l1dim;                 // sigma of Gaussian filter in box units
    double        Rsmooth_box  = Rsmooth/simu.boxsize;              // smoothing scale in box units
    double        s            = 2.0 * pow2(sigma*Rsmooth_box);
    double        a            = 1/s;
@@ -66,11 +202,8 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    /* fundamental wave in box units (B=1): kf = 2*pi */
    kf  = TWOPI;
    
-   /* short-cuts */
-   sf  = PI/(double)l1dim/kf;
-   sf2 = pow2(sf);
    A   = sqrt(PI/a);
-   B   = pow2(PI)/(sf*a); // a is in inverse-k and also needs to be adjusted to internal units via 'sf'
+   B   = pow2(PI)/(a);
    
    /* forward FFT of all arrays */
    fourn(darray-1, nn-1, NDIM, forward);
@@ -83,7 +216,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    
    /* loop over all cells, applying the smoothing function */
 #ifdef WITH_OPENMP
-#pragma omp parallel for private(n,m,l,kz,ky,kx,ksquare,Filter) shared(darray,vxarray,vyarray,vzarray,l1dim,k_dim,kf,k,sf2,B) schedule(static)
+#pragma omp parallel for private(n,m,l,kz,ky,kx,ksquare,Filter) shared(darray,vxarray,vyarray,vzarray,l1dim,k_dim,kf,k,B) schedule(static)
 #endif
    for(n = 0; n < k_dim; n++)
    {
@@ -98,7 +231,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
             kx = kf * k[l];
             
             // k^2 in box units
-            ksquare = sf2 * (kx * kx + ky * ky + kz * kz);
+            ksquare = (kx * kx + ky * ky + kz * kz);
             
             // Gaussian filter (internal units):
             //    f(x) = exp(-a x^2)
@@ -106,7 +239,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
             //        Filter = A * exp(-B*ksquare);   // the factor A cancels when considering the missing 1/sqrt(2pi sigma^2) normalisation factor in f(x)
             Filter = exp(-B*ksquare);
             
-            //        fprintf(stderr,"%g %g (%g)\n",sqrt(ksquare),Filter,TWOPI/Rsmooth_box*sf);
+            //        fprintf(stderr,"%g %g (%g)\n",sqrt(ksquare),Filter,TWOPI/Rsmooth_box);
             
             // apply filter to all arrays
             darray[Re(l,m,n,l1dim)] *= Filter;
@@ -251,11 +384,19 @@ void Smooth_gridFFT(gridls *cur_grid, double Rsmooth)
    
    
    /* the actual smoothing is done on the temporary grids */
+#ifdef GAUSSIAN_SMOOTHING
 #ifdef PWEB
    Gauss_smooth_arrays(pot_array, dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
 #else
    Gauss_smooth_arrays(dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
 #endif
+#else // GAUSSIAN_SMOOTHING
+#ifdef PWEB
+   TopHat_smooth_arrays(pot_array, dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
+#else
+   TopHat_smooth_arrays(dens_array, densVx_array, densVy_array, densVz_array, l1dim, Rsmooth);
+#endif
+#endif // GAUSSIAN_SMOOTHING
    
    /* copy back to original grid */
 #ifdef WITH_OPENMP

@@ -5,7 +5,7 @@
  * this is written into the logfile just for information
  *=============================================================================*/
 #define VERSION 1.0
-#define BUILD   0
+#define BUILD   1
 
 /*=============================================================================
  * by default, Cweb only calculates the Vweb,
@@ -45,6 +45,7 @@
 //#define TSC
 //#define CIC                    /* assignment schemes */
 //#define NGP
+//#define GAUSSIAN_SMOOTHING     // instead of TopHat use a Gaussian for the smoothing
 
 //#define BYTESWAP             /* forces a byteswap of the input file                                                */
 

@@ -913,9 +913,9 @@ int main(int argc, char **argv)
     else {
       fprintf(stderr,"  -> you are trying to smooth on a scale (Rsmooth=%lf [Mpc/h]) smaller than the 2x grid spacing (B/L=%lf [Mpc/h]): will not smooth!\n",Rsmooth,simu.boxsize/(double)cur_grid->l1dim);
 #ifdef WITH_MPI
-      sprintf(outfile,"%s.%05ld.Rs=0.%04d.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim,global_mpi.rank);
+      sprintf(outfile,"%s.%05ld.Rs=0.00.MPIrank%04d.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim,global_mpi.rank);
 #else
-      sprintf(outfile,"%s.%05ld.Rs=0.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim);
+      sprintf(outfile,"%s.%05ld.Rs=0.00.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim);
 #endif
     }
     

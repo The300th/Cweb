@@ -1647,6 +1647,11 @@ void write_parameterfile()
 #else
         fprintf(fpparam,"NGP                        \t\t0\n");
 #endif
+#ifdef GAUSSIAN_SMOOTHING
+        fprintf(fpparam,"GAUSSIAN_SMOOTHING         \t\t1\n");
+#else
+        fprintf(fpparam,"GAUSSIAN_SMOOTHING         \t\t0\n");
+#endif
       
 #ifdef READ_GRIDDATA
          fprintf(fpparam,"READ_GRIDDATA                        \t\t1\n");
