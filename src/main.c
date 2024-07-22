@@ -906,7 +906,11 @@ int main(int argc, char **argv)
 #else
       sprintf(outfile,"%s.%05ld.Rs=%4.2lf.Cweb",global_io.params->outfile_prefix,cur_grid->l1dim,Rsmooth);
 #endif
-      fprintf(stderr,"Smoothing %ld grid (Rsmooth=%f [Mpc/h])... ",cur_grid->l1dim,Rsmooth);
+#ifdef GAUSSIAN_SMOOTHING
+      fprintf(stderr,"Smoothing %ld grid (Rsmooth=%f [Mpc/h], Gaussian)... ",cur_grid->l1dim,Rsmooth);
+#else
+      fprintf(stderr,"Smoothing %ld grid (Rsmooth=%f [Mpc/h], TopHat)... ",cur_grid->l1dim,Rsmooth);
+#endif
       Smooth_gridFFT(cur_grid, Rsmooth);
       fprintf(stderr,"done\n");
     }
