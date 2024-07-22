@@ -5,7 +5,7 @@
  * this is written into the logfile just for information
  *=============================================================================*/
 #define VERSION 1.0
-#define BUILD   1
+#define BUILD   2
 
 /*=============================================================================
  * by default, Cweb only calculates the Vweb,

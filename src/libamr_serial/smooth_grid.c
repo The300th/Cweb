@@ -171,13 +171,11 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    long          i, l, m, n;
    int           forward=1, backward=-1;
    unsigned long nn[NDIM];
-   double        A, B; // short-cuts for constant factors
+   double        B; // short-cut for constant factors
    
    // Gaussian variables
-   double        sigma        = 1.0/(double)l1dim;                 // sigma of Gaussian filter in box units
    double        Rsmooth_box  = Rsmooth/simu.boxsize;              // smoothing scale in box units
-   double        s            = 2.0 * pow2(sigma*Rsmooth_box);
-   double        a            = 1/s;
+   double        s            = pow2(Rsmooth_box);
    
    /* dimensions of grid */
    nn[0] = l1dim;
@@ -201,10 +199,8 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    
    /* fundamental wave in box units (B=1): kf = 2*pi */
    kf  = TWOPI;
-   
-   A   = sqrt(PI/a);
-   B   = pow2(PI)/(a);
-   
+   B   = 2*pow2(PI)*pow2(s);
+      
    /* forward FFT of all arrays */
    fourn(darray-1, nn-1, NDIM, forward);
    fourn(vxarray-1, nn-1, NDIM, forward);
@@ -234,12 +230,11 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
             ksquare = (kx * kx + ky * ky + kz * kz);
             
             // Gaussian filter (internal units):
-            //    f(x) = exp(-a x^2)
-            // => f^(k)= sqrt(pi/a) * exp(-pi^2 k^2 /a)
-            //        Filter = A * exp(-B*ksquare);   // the factor A cancels when considering the missing 1/sqrt(2pi sigma^2) normalisation factor in f(x)
+            //    f(x) = 1/sqrt(2*pi*s^2) * exp(-x^2/(2*s^2))
+            // => f^(k)=                    exp(-2*pi^2*s^2 * k^2 )
             Filter = exp(-B*ksquare);
             
-            //        fprintf(stderr,"%g %g (%g)\n",sqrt(ksquare),Filter,TWOPI/Rsmooth_box);
+            //        fprintf(stderr,"%g %g\n",sqrt(ksquare),Filter);
             
             // apply filter to all arrays
             darray[Re(l,m,n,l1dim)] *= Filter;
