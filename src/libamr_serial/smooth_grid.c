@@ -201,10 +201,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    kf  = TWOPI;
 
    //    f(x) = 1/sqrt(2*pi*s^2) * exp(-x^2/(2*s^2))
-   // => f^(k)=                    exp(-2*pi^2*s^2 * k^2 )
-   B   = -2*pow2(PI)*pow2(s); // this is the correct window for a normalized Gaussian in real-space with dispersion Rs
-   
-   // exp(-1/2 k^2 R^2) appears to be heavily used in the literature (e.g. https://www.aanda.org/articles/aa/full_html/2024/06/aa48170-23/aa48170-23.html, https://academic.oup.com/mnras/article/274/3/730/974335)
+   // => f^(k)=                    exp(-(s*k)^2 / 2 ), where k=2pi/x! (e.g. https://www.aanda.org/articles/aa/full_html/2024/06/aa48170-23/aa48170-23.html, https://academic.oup.com/mnras/article/274/3/730/974335)
    B   =    -0.5    *pow2(s);
    
    /* forward FFT of all arrays */
