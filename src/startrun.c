@@ -157,7 +157,7 @@ local_startrunLog(void)
 	}
   
 	/* And since we can log now, log a bit. */
-	io_logging_hello(global_io.log, VERSION, BUILD);
+	io_logging_hello(global_io.log, VERSION);
 	io_logging_msg(global_io.log, INT32_C(2), " User Input:");
 	io_logging_msg(global_io.log, INT32_C(2), "=============");
 	io_logging_msg(global_io.log, INT32_C(2), "ic_filename       = %s (%s, %i)", global_io.params->icfile_name, io_file_typestr(global_io.params->ic_filetype),(int)(global_io.params->ic_filetype));

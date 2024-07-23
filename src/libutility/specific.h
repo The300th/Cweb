@@ -43,7 +43,7 @@ fprintf(fx,"\t CC                W           W  EEEEEE  BBBBB    \n");\
 fprintf(fx,"\t CC                 W         W   E       B    B   \n");\
 fprintf(fx,"\t  CCC          ====  W   W   W    EEEE    BBBBB    \n");\
 fprintf(fx,"\t    CCCC              W W W W     E       B    B   \n");\
-fprintf(fx,"\t       CCCCCC          W   W      EEEEEE  BBBBB    (v%3.1f/%03d)\n",VERSION,BUILD);\
+fprintf(fx,"\t       CCCCCC          W   W      EEEEEE  BBBBB    (v%3.1f)\n",VERSION);\
 fprintf(fx,"=======================================================================\n\n");
 
 

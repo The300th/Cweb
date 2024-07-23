@@ -254,13 +254,13 @@ io_logging_stop(io_logging_t *log)
 }
 
 extern void
-io_logging_hello(io_logging_t log, float version, int build)
+io_logging_hello(io_logging_t log, float version)
 {
 
 	if (log->logfile != NULL) {
 		fprintf(log->logfile, IO_LOGGING_BAR "\n");
 		fprintf(log->logfile, IO_LOGGING_LOGO);
-		fprintf(log->logfile, "(%3.1f/%03d)\n", version,build);
+		fprintf(log->logfile, "(%3.1f)\n", version);
 #		ifdef WITH_MPI
 		{
 			int rank, size;

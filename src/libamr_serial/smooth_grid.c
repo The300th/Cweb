@@ -175,7 +175,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    
    // Gaussian variables
    double        Rsmooth_box  = Rsmooth/simu.boxsize;              // smoothing scale in box units
-   double        s            = pow2(Rsmooth_box);
+   double        s            = Rsmooth_box;
    
    /* dimensions of grid */
    nn[0] = l1dim;
@@ -199,8 +199,14 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
    
    /* fundamental wave in box units (B=1): kf = 2*pi */
    kf  = TWOPI;
-   B   = 2*pow2(PI)*pow2(s);
-      
+
+   //    f(x) = 1/sqrt(2*pi*s^2) * exp(-x^2/(2*s^2))
+   // => f^(k)=                    exp(-2*pi^2*s^2 * k^2 )
+   B   = -2*pow2(PI)*pow2(s); // this is the correct window for a normalized Gaussian in real-space with dispersion Rs
+   
+   // exp(-1/2 k^2 R^2) appears to be heavily used in the literature (e.g. https://www.aanda.org/articles/aa/full_html/2024/06/aa48170-23/aa48170-23.html, https://academic.oup.com/mnras/article/274/3/730/974335)
+   B   =    -0.5    *pow2(s);
+   
    /* forward FFT of all arrays */
    fourn(darray-1, nn-1, NDIM, forward);
    fourn(vxarray-1, nn-1, NDIM, forward);
@@ -230,9 +236,7 @@ void Gauss_smooth_arrays(flouble *darray, flouble *vxarray, flouble *vyarray, fl
             ksquare = (kx * kx + ky * ky + kz * kz);
             
             // Gaussian filter (internal units):
-            //    f(x) = 1/sqrt(2*pi*s^2) * exp(-x^2/(2*s^2))
-            // => f^(k)=                    exp(-2*pi^2*s^2 * k^2 )
-            Filter = exp(-B*ksquare);
+            Filter = exp(B*ksquare);
             
             //        fprintf(stderr,"%g %g\n",sqrt(ksquare),Filter);
             

@@ -1738,7 +1738,7 @@ int main(int argc, char **argv)
   
   
   fprintf(io.logfile, "==========================================================\n");
-  fprintf(io.logfile, "                       FINISHED (v%3.1f/%03d)\n",VERSION,BUILD);
+  fprintf(io.logfile, "                       FINISHED (v%3.1f)\n",VERSION);
   fprintf(io.logfile, "==========================================================\n");
   fclose(io.logfile);
   

@@ -167,7 +167,7 @@ io_logging_subsection(io_logging_t log,
  * \return Nothing.
  */
 extern void
-io_logging_hello(io_logging_t log, float version, int build);
+io_logging_hello(io_logging_t log, float version);
 
 /**
  * \brief Writes an identification message of the library to the
