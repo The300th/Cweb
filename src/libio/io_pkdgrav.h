@@ -1,10 +1,10 @@
-#ifndef IO_DEVA_H
-#define IO_DEVA_H
+#ifndef IO_PKDGRAV_H
+#define IO_PKDGRAV_H
 
 /**
- * \file io_deva.h
+ * \file io_pkdgrav.h
  *
- * Provides functions for reading and writing DEVA files.
+ * Provides functions for reading and writing pkdgrav files.
  */
 
 
@@ -18,8 +18,8 @@
 #	include <mpi.h>
 #endif
 
-#include "io_deva_header_def.h"
-#include "io_deva_def.h"
+#include "io_pkdgrav_header_def.h"
+#include "io_pkdgrav_def.h"
 #include "io_file.h"
 #include "io_logging.h"
 
@@ -34,70 +34,66 @@
 \***********************************************************************/
 
 /**
- * \brief Just tries to open a DEVA file.
+ * \brief Just tries to open a pkdgrav file.
  *
  * This can be used either to read from an existing file, or to open a
  * new file for reading. See the mode flag.
  *
  * \param log       The logging object.
- * \param *fname    The filename of the DEVA file.
+ * \param *fname    The filename of the pkdgrav file.
  * \param swapped   If this is IO_FILE_ISNOT_SWAPPED or
- *                  IO_FILE_IS_SWAPPED an according DEVA file is
+ *                  IO_FILE_IS_SWAPPED an according pkdgrav file is
  *                  assumed and no checks will be done. Hence
  *                  IO_FILE_UNKOWN_SWAPPING should be supplied when
- *                  opening a DEVA file as the interal mechanism will
+ *                  opening a pkdgrav file as the interal mechanism will
  *                  normally detect the right state.
  * \param mode      Tells if the file should be opened for reading or for
  *                  writing. If opened for writing, the value for swapped
  *                  will be ignored.
  * \param reader    Number of processes reading. Only important if in
  *                  MPI mode, otherwise it will be forced to 1.
- * \param native    Native or converted format.
  *
  * \return Returns a partially initialized file object, or NULL if the
  *         file could not be opened.
  */
-extern io_deva_t
-io_deva_open(io_logging_t log,
+extern io_pkdgrav_t
+io_pkdgrav_open(io_logging_t log,
                char *fname,
                io_file_swap_t swapped,
                io_file_mode_t mode,
-               uint32_t reader,
-               int native);
+               uint32_t reader);
 
 /**
- * \brief This will close and finalize an DEVA file.
+ * \brief This will close and finalize an pkdgrav file.
  *
  * \param log  The logging object.
- * \param *f   Pointer to the variable holding the DEVA file object.
+ * \param *f   Pointer to the variable holding the pkdgrav file object.
  *             This variable will be set to NULL.
  *
  * \return Nothing.
  */
 extern void
-io_deva_close(io_logging_t log,
-                io_deva_t *f);
+io_pkdgrav_close(io_logging_t log,
+                io_pkdgrav_t *f);
 
 /**
- * \brief Initializes an opened for reading DEVA file.
+ * \brief Initializes an opened for reading pkdgrav file.
  *
- * \param log     The logging object.
- * \param f       The file object to be initialized.
- * \param native  Native or converted format
+ * \param log  The logging object.
+ * \param f    The file object to be initialized.
  *
  * \return Nothing.
  */
 extern void
-io_deva_init(io_logging_t log,
-               io_deva_t f,
-               int native);
+io_pkdgrav_init(io_logging_t log,
+               io_pkdgrav_t f);
 
 /**                          
- * \brief Reads from an opened DEVA file all particle information and
+ * \brief Reads from an opened pkdgrav file all particle information and
  *        converts them to AMIGA units.
  *
  * This functions requires the file object to be opened by
- * io_deva_open and inititalized by io_amiga_init. It also requires
+ * io_pkdgrav_open and inititalized by io_amiga_init. It also requires
  * pointer to beginning of the particle array, which must be large
  * enough to accomodate all particles (can be check by evaluating the
  * number of particles given in the file header).
@@ -113,7 +109,6 @@ io_deva_init(io_logging_t log,
  * \param pskip  Number of particles to skip.
  * \param pread  Number of particles to read.
  * \param strg   The abstract description of the external storage.
- * \param native Native or converted format
  *                                 
  * \return Returns the number of particles read from the file. If this
  *         is not the number of particles given as the pread parameter,
@@ -121,18 +116,17 @@ io_deva_init(io_logging_t log,
  *         the return value.
  */
 extern uint64_t
-io_deva_readpart(io_logging_t log,
-                   io_deva_t f,
+io_pkdgrav_readpart(io_logging_t log,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    uint64_t pread,
-                   io_file_strg_struct_t strg,
-                   int native);
+                   io_file_strg_struct_t strg);
 
 /**                          
- * \brief Reads from an opened DEVA file all particle information
+ * \brief Reads from an opened pkdgrav file all particle information
  *        without converting to AMIGA units.
  *
- * Otherwise the io_deva_readpart();
+ * Otherwise the io_pkdgrav_readpart();
  *
  * \param log    The logging object.
  * \param f      The initialized file object.
@@ -146,38 +140,14 @@ io_deva_readpart(io_logging_t log,
  *         the return value.
  */
 extern uint64_t
-io_deva_readpart_raw(io_logging_t log,
-                       io_deva_t f,
-                       uint64_t pskip,
-                       uint64_t pread,
-                       io_file_strg_struct_t strg);
-
-/**                          
- * \brief Reads from an opened DEVA file all particle information
- *        without converting to AMIGA units.
- *
- * Otherwise the io_deva_readpart();
- *
- * \param log    The logging object.
- * \param f      The initialized file object.
- * \param pskip  Number of particles to skip.
- * \param pread  Number of particles to read.
- * \param strg   The abstract description of the external storage.
- *                                 
- * \return Returns the number of particles read from the file. If this
- *         is not the number of particles given as the pread parameter,
- *         something went wrong. The calling function hence should check
- *         the return value.
- */
-extern uint64_t
-io_deva_readpart_raw_native(io_logging_t log,
-                       io_deva_t f,
+io_pkdgrav_readpart_raw(io_logging_t log,
+                       io_pkdgrav_t f,
                        uint64_t pskip,
                        uint64_t pread,
                        io_file_strg_struct_t strg);
 
 /**
- * \brief Writes the particles to a DEVA binary file
+ * \brief Writes the particles to a pkdgrav binary file
  *
  * The file object given to the function needs to be opened for
  * writing.
@@ -193,14 +163,14 @@ io_deva_readpart_raw_native(io_logging_t log,
  *         header.
  */
 extern uint64_t
-io_deva_writepart(io_logging_t log,
-                    io_deva_t f,
+io_pkdgrav_writepart(io_logging_t log,
+                    io_pkdgrav_t f,
                     uint64_t pskip,
                     uint64_t pwrite,
                     io_file_strg_struct_t strg);
 
 /**
- * \brief Writes the particles to a DEVA binary file in an ordered
+ * \brief Writes the particles to a pkdgrav binary file in an ordered
  *        way.
  *
  * The file object given to the function needs to be opened for
@@ -220,8 +190,8 @@ io_deva_writepart(io_logging_t log,
  */
 
 extern uint64_t
-io_deva_writepart_ord(io_logging_t log,
-                        io_deva_t f,
+io_pkdgrav_writepart_ord(io_logging_t log,
+                        io_pkdgrav_t f,
                         uint64_t pskip,
                         uint64_t pwrite,
                         void *nxt_part,
@@ -238,8 +208,8 @@ io_deva_writepart_ord(io_logging_t log,
  * \return True if the parameter could be read, false if not.
  */
 extern bool
-io_deva_get(io_logging_t log,
-              io_deva_t f,
+io_pkdgrav_get(io_logging_t log,
+              io_pkdgrav_t f,
               io_file_get_t what,
               void *res);
 
@@ -254,8 +224,8 @@ io_deva_get(io_logging_t log,
  * \return True if the parameter could be set, false if not.
  */
 extern bool
-io_deva_set(io_logging_t log,
-              io_deva_t f,
+io_pkdgrav_set(io_logging_t log,
+              io_pkdgrav_t f,
               io_file_get_t what,
               void *res);
 
@@ -268,23 +238,8 @@ io_deva_set(io_logging_t log,
  * \return Nothing.
  */
 extern void
-io_deva_log(io_logging_t log, io_deva_t f);
+io_pkdgrav_log(io_logging_t log, io_pkdgrav_t f);
 
-/**
- * \brief Resets the position and weight scales to given values
- *
- * \param log          The logging object.
- * \param f            The file object.
- * \param posscale     The new scale to translate from DEVA file
- *                     units to Mpc.
- * \param weightscale  The new scale to translate from DEVA file units
- *                     to Msun.
- */
-extern void
-io_deva_resetscale(io_logging_t log,
-                     io_deva_t f,
-                     double posscale,
-                     double weightscale);
 
 /**
  * \brief Does the scaling of particles.
@@ -303,16 +258,17 @@ io_deva_resetscale(io_logging_t log,
  *         exactly particles_read.
  */
 extern uint64_t
-io_deva_scale_particles(io_logging_t log,
-                          double maxpos[],
-                          double minpos[],
-                          float *boxsize,
-                          float expansion,
-                          float h0t0,
-                          double posscale,
-                          double mmass,
-                          uint64_t particles_read,
-                          io_file_strg_struct_t strg);
+io_pkdgrav_scale_particles(io_logging_t log,
+                         double maxpos[],
+                         double minpos[],
+                         double boxsize,
+                         double expansion,
+                         double KpcUnit,
+                         double MsolUnit,
+                         double ErgPerGmUnit,
+                         double KmPerSecUnit,
+                         uint64_t particles_read,
+                         io_file_strg_struct_t strg);
 
 #ifdef WITH_MPI
 /**
@@ -330,15 +286,12 @@ io_deva_scale_particles(io_logging_t log,
  * \return Nothing.
  */
 extern void
-io_deva_scale_global(io_logging_t log,
-                     MPI_Comm comm,
-                     double *maxpos,
-                     double *minpos,
-                     double *mmass,
-                     double *minweight,
-                     double *maxweight,
-                     double *sumweight);
+io_pkdgrav_scale_global(io_logging_t log,
+                       MPI_Comm comm,
+                       double *maxpos,
+                       double *minpos,
+                       double *mmass);
 #endif
 
 
-#endif /* IO_DEVA_H */
+#endif /* IO_PKDGRAV_H */

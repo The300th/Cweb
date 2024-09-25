@@ -32,17 +32,17 @@
 #define IO_LOGGING_STOP "\nLogging stopped.\n\n"
 
 	/**
-	 * The Cweb logo.
+	 * The AMIGA logo.
 	 */
 #	define IO_LOGGING_LOGO \
-"\t       CCCCCC                                   \n"\
-"\t    CCCC                                         \n"\
-"\t  CCC                                           \n"\
-"\t CC                W           W  EEEEEE  BBBBB    \n"\
-"\t CC                 W         W   E       B    B   \n"\
-"\t  CCC          ====  W   W   W    EEEE    BBBBB    \n"\
-"\t    CCCC              W W W W     E       B    B   \n"\
-"\t       CCCCCC          W   W      EEEEEE  BBBBB  "
+"\t             A        H       H   FFFFFFFF    \n"\
+"\t           A A       H       H   F           \n"\
+"\t         A   A      H       H   F           \n"\
+"\t       AAAAAAA     HHHHHHHHH   FFFFFF      \n"\
+"\t     A       A    H       H   F           \n"\
+"\t   A         A   H       H   F           \n"\
+"\t A           A  H       H   F       "
+
 
 /**
  * A horizontal bar.

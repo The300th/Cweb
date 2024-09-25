@@ -15,7 +15,6 @@
 #include "io_amiga.h"
 #include "io_ares.h"
 #include "io_ascii.h"
-#include "io_halos.h"
 #include "io_cubep3m.h"
 #include "io_mcubep3m.h"
 #include "io_art.h"
@@ -25,6 +24,7 @@
 #ifdef WITH_HDF5
 #include "io_gizmo.h"
 #include "io_mgizmo.h"
+#include "io_pkdgrav.h"
 #endif
 #include "io_deva.h"
 #include "io_tipsy.h"
@@ -67,9 +67,6 @@ io_file_typestr(io_file_type_t type)
     case IO_FILE_ASCII:
       return IO_FILE_ASCII_STR;
       
-    case IO_FILE_HALOS:
-      return IO_FILE_HALOS_STR;
-      
     case IO_FILE_CUBEP3M:
       return IO_FILE_CUBEP3M_STR;
       
@@ -88,6 +85,9 @@ io_file_typestr(io_file_type_t type)
       
     case IO_FILE_MGIZMO:
       return IO_FILE_MGIZMO_STR;
+    
+    case IO_FILE_PKDGRAV:
+      return IO_FILE_PKDGRAV_STR;
 #endif
       
     case IO_FILE_ART:
@@ -181,9 +181,6 @@ io_file_open(io_logging_t   log,
     case IO_FILE_ASCII:
       dummy = (io_file_t)io_ascii_open(log, fname, mode, reader);
       break;
-    case IO_FILE_HALOS:
-      dummy = (io_file_t)io_halos_open(log, fname, mode, reader);
-      break;
     case IO_FILE_CUBEP3M:
       dummy = (io_file_t)io_cubep3m_open(log, fname, swapped, mode,
                                          reader);
@@ -216,6 +213,10 @@ io_file_open(io_logging_t   log,
     case IO_FILE_MGIZMO:
       dummy = (io_file_t)io_mgizmo_open(log, fname, swapped, mode,
                                         reader);
+      break;
+    case IO_FILE_PKDGRAV:
+      dummy = (io_file_t)io_pkdgrav_open(log, fname, swapped, mode,
+                                       reader);
       break;
 #endif
     case IO_FILE_DEVA:
@@ -260,9 +261,6 @@ io_file_close(io_logging_t log,
     case IO_FILE_ASCII:
       io_ascii_close(log, (io_ascii_t *)f);
       break;
-    case IO_FILE_HALOS:
-      io_halos_close(log, (io_halos_t *)f);
-      break;
     case IO_FILE_CUBEP3M:
       io_cubep3m_close(log, (io_cubep3m_t *)f);
       break;
@@ -287,6 +285,9 @@ io_file_close(io_logging_t log,
       break;
     case IO_FILE_MGIZMO:
       io_mgizmo_close(log, (io_mgizmo_t *)f);
+      break;
+    case IO_FILE_PKDGRAV:
+      io_pkdgrav_close(log, (io_pkdgrav_t *)f);
       break;
 #endif
     case IO_FILE_DEVA:
@@ -330,9 +331,6 @@ io_file_init(io_logging_t log,
     case IO_FILE_ASCII:
       io_ascii_init(log, (io_ascii_t)f);
       break;
-    case IO_FILE_HALOS:
-      io_halos_init(log, (io_halos_t)f);
-      break;
     case IO_FILE_CUBEP3M:
       io_cubep3m_init(log, (io_cubep3m_t)f);
       break;
@@ -357,6 +355,9 @@ io_file_init(io_logging_t log,
       break;
     case IO_FILE_MGIZMO:
       io_mgizmo_init(log, (io_mgizmo_t)f);
+      break;
+    case IO_FILE_PKDGRAV:
+      io_pkdgrav_init(log, (io_pkdgrav_t)f);
       break;
 #endif
     case IO_FILE_DEVA:
@@ -413,11 +414,6 @@ io_file_readpart(io_logging_t          log,
                               pskip_parallel, pread_parallel,
                               strg);
       break;
-    case IO_FILE_HALOS:
-      tmp = io_halos_readpart(log, (io_halos_t)f,
-                              pskip_parallel, pread_parallel,
-                              strg);
-      break;
     case IO_FILE_CUBEP3M:
       tmp = io_cubep3m_readpart(log, (io_cubep3m_t)f,
                                 pskip_parallel, pread_parallel,
@@ -458,6 +454,11 @@ io_file_readpart(io_logging_t          log,
       tmp = io_mgizmo_readpart(log, (io_mgizmo_t)f,
                                pskip_parallel, pread_parallel,
                                strg);
+      break;
+    case IO_FILE_PKDGRAV:
+      tmp = io_pkdgrav_readpart(log, (io_pkdgrav_t)f,
+                              pskip_parallel, pread_parallel,
+                              strg);
       break;
 #endif
     case IO_FILE_DEVA:
@@ -625,9 +626,6 @@ io_file_get(io_logging_t  log,
     case IO_FILE_ASCII:
       return io_ascii_get(log, (io_ascii_t)f, what, res);
       
-    case IO_FILE_HALOS:
-      return io_halos_get(log, (io_halos_t)f, what, res);
-      
     case IO_FILE_CUBEP3M:
       return io_cubep3m_get(log, (io_cubep3m_t)f, what, res);
       
@@ -652,6 +650,9 @@ io_file_get(io_logging_t  log,
       
     case IO_FILE_MGIZMO:
       return io_mgizmo_get(log, (io_mgizmo_t)f, what, res);
+
+    case IO_FILE_PKDGRAV:
+      return io_pkdgrav_get(log, (io_pkdgrav_t)f, what, res);
 #endif
       
     case IO_FILE_DEVA:
@@ -688,9 +689,6 @@ io_file_set(io_logging_t  log,
       
     case IO_FILE_ASCII:
       return io_ascii_set(log, (io_ascii_t)f, what, res);
-
-    case IO_FILE_HALOS:
-      return io_halos_set(log, (io_halos_t)f, what, res);
       
     case IO_FILE_GADGET:
       return io_gadget_set(log, (io_gadget_t)f, what, res);
@@ -703,6 +701,9 @@ io_file_set(io_logging_t  log,
       
     case IO_FILE_MGIZMO:
       return io_mgizmo_set(log, (io_mgizmo_t)f, what, res);
+    
+    case IO_FILE_PKDGRAV:
+      return io_pkdgrav_set(log, (io_pkdgrav_t)f, what, res);
 #endif
       
     default:
@@ -731,9 +732,6 @@ io_file_log(io_logging_t log,
     case IO_FILE_ASCII:
       io_ascii_log(log, (io_ascii_t)f);
       break;
-    case IO_FILE_HALOS:
-      io_halos_log(log, (io_halos_t)f);
-      break;
     case IO_FILE_CUBEP3M:
       io_cubep3m_log(log, (io_cubep3m_t)f);
       break;
@@ -758,6 +756,9 @@ io_file_log(io_logging_t log,
       break;
     case IO_FILE_MGIZMO:
       io_mgizmo_log(log, (io_mgizmo_t)f);
+      break;
+    case IO_FILE_PKDGRAV:
+      io_pkdgrav_log(log, (io_pkdgrav_t)f);
       break;
 #endif
     case IO_FILE_DEVA:

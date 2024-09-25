@@ -1,9 +1,11 @@
-/* Belaid & Doug Nov. 13, 2018 */
+/* Belaid, Doug & Isaac Jul. 5, 2022 */
 
 /**
- * \file io_gizmo.c
+ * \file io_pkdgrav.c
  *
- * Provides functions for reading and writing Gizmo files.
+ * Provides functions for reading and writing PKDGRAV files.
+ * It is basically a copy of io_gizmo.c but changing the unit handling and
+ * some other small details
  */
 
 #ifdef WITH_HDF5
@@ -21,8 +23,8 @@
 #endif
 #include <limits.h>
 
-#include "io_gizmo.h"
-#include "io_gizmo_header.h"
+#include "io_pkdgrav.h"
+#include "io_pkdgrav_header.h"
 #include "io_util.h"
 
 #include "../define.h"
@@ -42,7 +44,7 @@
  * \brief Helper function to open the file
  *
  * This function is supposed to get inlined anyway. Makes
- * io_gizmo_open more readable.
+ * io_pkdgrav_open more readable.
  *
  * \param log   The logging object.
  * \param f     The Gizmo file object sofar
@@ -50,8 +52,8 @@
  *
  * \returns In case of an error NULL is returned, otherwise f.
  */
-inline static io_gizmo_t
-local_openopen(io_logging_t log, io_gizmo_t f, io_file_mode_t mode);
+inline static io_pkdgrav_t
+local_openopen(io_logging_t log, io_pkdgrav_t f, io_file_mode_t mode);
 
 /**
  * \brief Helper funtion to set the swap-state and write some
@@ -65,7 +67,7 @@ local_openopen(io_logging_t log, io_gizmo_t f, io_file_mode_t mode);
  */
 inline static void
 local_openswapped(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   io_file_swap_t swapped);
 
 /**
@@ -76,8 +78,8 @@ local_openswapped(io_logging_t log,
  *
  * \return Returns the file object or NULL in case of an error.
  */
-inline static io_gizmo_t
-local_opengetswap(io_logging_t log, io_gizmo_t f);
+inline static io_pkdgrav_t
+local_opengetswap(io_logging_t log, io_pkdgrav_t f);
 
 /**
  * \brief Tries to figure out which Gizmo file version is to be used.
@@ -88,7 +90,7 @@ local_opengetswap(io_logging_t log, io_gizmo_t f);
  * \return Nothing.
  */
 inline static void
-local_openversion(io_logging_t log, io_gizmo_t f);
+local_openversion(io_logging_t log, io_pkdgrav_t f);
 
 /**
  * \brief Check before writing particles and place file pointer at the
@@ -103,13 +105,13 @@ local_openversion(io_logging_t log, io_gizmo_t f);
  */
 inline static int32_t
 local_write_common(io_logging_t log,
-                   io_gizmo_t f,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    int32_t bytes);
 
 static uint64_t
 local_get_block_pos(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t *pskip,
                     uint64_t *pread,
                     io_file_strg_struct_t strg,
@@ -117,7 +119,7 @@ local_get_block_pos(io_logging_t log,
 
 static uint64_t
 local_get_block_vel(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t pskip,
                     uint64_t pread,
                     io_file_strg_struct_t strg,
@@ -125,7 +127,7 @@ local_get_block_vel(io_logging_t log,
 
 static uint64_t
 local_get_block_id(io_logging_t log,
-                   io_gizmo_t f,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    uint64_t pread,
                    io_file_strg_struct_t strg,
@@ -133,7 +135,7 @@ local_get_block_id(io_logging_t log,
 
 static uint64_t
 local_get_block_mass(io_logging_t log,
-                     io_gizmo_t f,
+                     io_pkdgrav_t f,
                      uint64_t pskip,
                      uint64_t pread,
                      io_file_strg_struct_t strg,
@@ -141,18 +143,18 @@ local_get_block_mass(io_logging_t log,
 
 static uint64_t
 local_get_block_u(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   uint64_t pskip,
                   uint64_t pread,
                   io_file_strg_struct_t strg,
                   hid_t hdf5_grp[]);
 
-void local_find_block(io_gizmo_t, char *);
+void local_find_block(io_pkdgrav_t, char *);
 
 #ifdef METALHACK
 static uint64_t
 local_get_block_z(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   uint64_t pskip,
                   uint64_t pread,
                   io_file_strg_struct_t strg,
@@ -160,7 +162,7 @@ local_get_block_z(io_logging_t log,
 
 static uint64_t
 local_get_block_age(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t pskip,
                     uint64_t pread,
                     io_file_strg_struct_t strg,
@@ -172,19 +174,19 @@ local_get_block_age(io_logging_t log,
 /**********************************************************************\
  *    Implementation of global functions                              *
  \**********************************************************************/
-extern io_gizmo_t
-io_gizmo_open(io_logging_t log,
+extern io_pkdgrav_t
+io_pkdgrav_open(io_logging_t log,
               char *fname,
               io_file_swap_t swapped,
               io_file_mode_t mode,
               uint32_t reader)
 {
-  io_gizmo_t f;
+  io_pkdgrav_t f;
   
   /* Get memory for the structure */
-  f = (io_gizmo_t)malloc(sizeof(io_gizmo_struct_t));
+  f = (io_pkdgrav_t)malloc(sizeof(io_pkdgrav_struct_t));
   if (f == NULL) {
-    io_logging_memfatal(log,  "io_gizmo structure");
+    io_logging_memfatal(log,  "io_pkdgrav structure");
     return NULL;
   }
   
@@ -193,14 +195,14 @@ io_gizmo_open(io_logging_t log,
   /* Store the filename */
   f->fname = (char *)malloc(sizeof(char) * (strlen(fname) + 1));
   if (f->fname == NULL) {
-    io_logging_memfatal(log, "filename of GizmoFile");
+    io_logging_memfatal(log, "filename of PkdgravFile");
     free(f);
     return NULL;
   }
   strncpy(f->fname, fname, strlen(fname)+1);
   
-  /* Okay, we are a Gizmo file */
-  f->ftype = IO_FILE_GIZMO;
+  /* Okay, we are a PKDGRAV file */
+  f->ftype = IO_FILE_PKDGRAV;
   
   /* And we can just copy in the parallel information */
 #	ifdef WITH_MPI
@@ -243,7 +245,7 @@ io_gizmo_open(io_logging_t log,
    }
    }*/
   
-  /* Identify Gizmo format */
+  /* Identify PKDGRAV3 format */
   local_openversion(log, f);
   
   /* Nothing for the header for now */
@@ -265,8 +267,8 @@ io_gizmo_open(io_logging_t log,
 }
 
 extern void
-io_gizmo_close(io_logging_t log,
-               io_gizmo_t *f)
+io_pkdgrav_close(io_logging_t log,
+               io_pkdgrav_t *f)
 {
   /* Catch NULLs */
   if (f == NULL || *f == NULL)
@@ -275,12 +277,12 @@ io_gizmo_close(io_logging_t log,
   /* Put header to the file if necessary */
   if (    ((*f)->mode == IO_FILE_WRITE)
       && ((*f)->header != NULL)) {
-    io_gizmo_header_write(log, (*f)->header, *f);
+    io_pkdgrav_header_write(log, (*f)->header, *f);
   }
   
   /* Close */
   if ((*f)->header != NULL)
-    io_gizmo_header_del(log, &((*f)->header));
+    io_pkdgrav_header_del(log, &((*f)->header));
   if ((*f)->fname != NULL)
     free((*f)->fname);
 #	ifdef WITH_MPI
@@ -302,8 +304,8 @@ io_gizmo_close(io_logging_t log,
 }
 
 extern void
-io_gizmo_init(io_logging_t log,
-              io_gizmo_t f)
+io_pkdgrav_init(io_logging_t log,
+              io_pkdgrav_t f)
 {
   if (f == NULL)
     return;
@@ -311,7 +313,7 @@ io_gizmo_init(io_logging_t log,
   if (f->header != NULL) {
     io_logging_warn(log, INT32_C(1),
                     "Already have the header information! Rereading.");
-    io_gizmo_header_del(log, &(f->header));
+    io_pkdgrav_header_del(log, &(f->header));
   }
   
   if (f->mode != IO_FILE_READ) {
@@ -325,7 +327,7 @@ io_gizmo_init(io_logging_t log,
   io_logging_msg(log, INT32_C(5),
                  "Starting to initialize file object from %s",
                  f->fname);
-  f->header = io_gizmo_header_get(log, f);
+  f->header = io_pkdgrav_header_get(log, f);
   io_logging_msg(log, INT32_C(5),
                  "Done with initializing file object from %s",
                  f->fname);
@@ -346,13 +348,14 @@ io_gizmo_init(io_logging_t log,
       }
     }
   }
+
   
   return;
 }
 
 extern uint64_t
-io_gizmo_readpart(io_logging_t log,
-                  io_gizmo_t f,
+io_pkdgrav_readpart(io_logging_t log,
+                  io_pkdgrav_t f,
                   uint64_t pskip,
                   uint64_t pread,
                   io_file_strg_struct_t strg)
@@ -365,7 +368,7 @@ io_gizmo_readpart(io_logging_t log,
    * First read the particles unscaled. This will set important
    * scaling information
    */
-  particles_read = io_gizmo_readpart_raw(log, f, pskip, pread, strg);
+  particles_read = io_pkdgrav_readpart_raw(log, f, pskip, pread, strg);
   
   if (particles_read != pread) {
     return UINT64_C(0);
@@ -373,12 +376,21 @@ io_gizmo_readpart(io_logging_t log,
   
   /* And do the scaling */
 #ifdef WITH_MPI
-  io_gizmo_scale_global(log, f->mycomm,  f->maxpos, f->minpos, &(f->mmass));
+  io_pkdgrav_scale_global(log, f->mycomm,  f->maxpos, f->minpos, &(f->mmass));
 #endif
-  tmp = io_gizmo_scale_particles(log, f->maxpos, f->minpos,
-                                 &(f->header->boxsize),
+  /* I do not understand why we pass the mmass (minimal mass) as the mass
+   * scale... so I have changed it.
+   * It seems that the normalization by mmass is somewhat arbitrary.
+   */
+  f->mmass = 1.;
+
+  tmp = io_pkdgrav_scale_particles(log, f->maxpos, f->minpos,
+                                 f->header->boxsize,
                                  f->header->expansion,
-                                 f->posscale, f->mmass,
+                                 f->header->KpcUnit,
+                                 f->header->MsolUnit,
+                                 f->header->ErgPerGmUnit,
+                                 f->header->KmPerSecUnit,
                                  particles_read, strg);
   if (tmp != particles_read) {
     return tmp;
@@ -389,8 +401,8 @@ io_gizmo_readpart(io_logging_t log,
 }
 
 extern uint64_t
-io_gizmo_readpart_raw(io_logging_t log,
-                      io_gizmo_t f,
+io_pkdgrav_readpart_raw(io_logging_t log,
+                      io_pkdgrav_t f,
                       uint64_t pskip,
                       uint64_t pread,
                       io_file_strg_struct_t strg)
@@ -407,11 +419,9 @@ io_gizmo_readpart_raw(io_logging_t log,
   hsize_t dims[2], count[2], start[2];
   
 #ifdef FOPENCLOSE
-  //fprintf(stderr,"FOPENCLOSE: io_gizmo_readpart_raw() opening %s ... ",f->fname);
-  //f->file = fopen(f->fname,IO_FILE_MODE_READ);
   f->file = H5Fopen(f->fname, H5F_ACC_RDONLY, H5P_DEFAULT);
   if (f->file < 0) {
-    io_logging_fatal(log,"io_gizmo_readpart_raw(): could not open file %s for reading",f->fname);
+    io_logging_fatal(log,"io_pkdgrav_readpart_raw(): could not open file %s for reading",f->fname);
     return UINT64_C(0);
   }
 #endif
@@ -518,8 +528,8 @@ io_gizmo_readpart_raw(io_logging_t log,
 
 
 extern uint64_t
-io_gizmo_writepart(io_logging_t log,
-                   io_gizmo_t f,
+io_pkdgrav_writepart(io_logging_t log,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    uint64_t pwrite,
                    io_file_strg_struct_t strg)
@@ -528,8 +538,8 @@ io_gizmo_writepart(io_logging_t log,
 }
 
 extern uint64_t
-io_gizmo_writepart_ord(io_logging_t log,
-                       io_gizmo_t f,
+io_pkdgrav_writepart_ord(io_logging_t log,
+                       io_pkdgrav_t f,
                        uint64_t pskip,
                        uint64_t pwrite,
                        void *nxt_part,
@@ -539,8 +549,8 @@ io_gizmo_writepart_ord(io_logging_t log,
 }
 
 extern bool
-io_gizmo_get(io_logging_t log,
-             io_gizmo_t f,
+io_pkdgrav_get(io_logging_t log,
+             io_pkdgrav_t f,
              io_file_get_t what,
              void *res)
 {
@@ -583,25 +593,21 @@ io_gizmo_get(io_logging_t log,
       }
       break;
     case IO_FILE_GET_BOXSIZE:
-      *((double *)res) =   f->header->boxsize * f->posscale;
+      *((double *)res) =   f->header->boxsize;
       break;
     case IO_FILE_GET_PMASS:
-      if (f->multimass) {
-        *((double *)res) = f->mmass * f->weightscale;
-      } else {
-        *((double *)res) =   f->header->massarr[1] * f->weightscale;
-      }
+      *((double *)res) = f->header->MsolUnit * f->header->hubbleparameter;
       break;
     case IO_FILE_GET_ZINITIAL:
       io_logging_warn(log, INT32_C(1),
-                      "zinitial is not set in a Gizmo file, "
+                      "zinitial is not set in a PKDGRAV file, "
                       "using current redshift");
     case IO_FILE_GET_Z:
       *((double *)res) = f->header->redshift;
       break;
     case IO_FILE_GET_AINITIAL:
       io_logging_warn(log, INT32_C(1),
-                      "ainitial is not set in a Gizmo file, "
+                      "ainitial is not set in a PKDGRAV file, "
                       "using current expansion.");
     case IO_FILE_GET_A:
       *((double *)res) = f->header->expansion;
@@ -626,19 +632,19 @@ io_gizmo_get(io_logging_t log,
       break;
     case IO_FILE_GET_NOTSTEP:
       io_logging_warn(log, INT32_C(1),
-                      "Gizmo files don't store the step number. "
+                      "PKDGRAV files don't store the step number. "
                       "Setting to 0.");
       *((int32_t *)res) = 0;
       break;
     case IO_FILE_GET_TSTEP:
       io_logging_warn(log, INT32_C(1),
-                      "Gizmo files don't store the timestep. "
+                      "PKDGRAV files don't store the timestep. "
                       "Setting to 0.0");
       *((double *)res) = 0.0;
       break;
     case IO_FILE_GET_HEADERSTR:
       io_logging_warn(log, INT32_C(1),
-                      "Gizmo files don't have a header string. "
+                      "PKDGRAV files don't have a header string. "
                       "Using a dummy one.");
       *((char **)res) = "No header string.";
       break;
@@ -672,8 +678,8 @@ io_gizmo_get(io_logging_t log,
 }
 
 extern bool
-io_gizmo_set(io_logging_t log,
-             io_gizmo_t f,
+io_pkdgrav_set(io_logging_t log,
+             io_pkdgrav_t f,
              io_file_get_t what,
              void *res)
 {
@@ -712,7 +718,7 @@ io_gizmo_set(io_logging_t log,
 }
 
 extern void
-io_gizmo_log(io_logging_t log, io_gizmo_t f)
+io_pkdgrav_log(io_logging_t log, io_pkdgrav_t f)
 {
   io_logging_msg(log, INT32_C(5),
                  "Fileobject information:");
@@ -765,77 +771,29 @@ io_gizmo_log(io_logging_t log, io_gizmo_t f)
   io_logging_msg(log, INT32_C(5),
                  "  No. of species:       %" PRIi32,
                  f->no_species);
-  io_logging_msg(log, INT32_C(5),
-                 "  Position scale:       %g",
-                 f->posscale);
-  io_logging_msg(log, INT32_C(5),
-                 "  Weight scale:         %g",
-                 f->weightscale);
-  io_gizmo_header_log(log, f->header);
+  io_pkdgrav_header_log(log, f->header);
   
   return;
 }
 
-extern void
-io_gizmo_resetscale(io_logging_t log,
-                    io_gizmo_t f,
-                    double posscale,
-                    double weightscale) {
-  if (f == NULL)
-    return;
-  
-  io_logging_msg(log, INT32_C(8),
-                 "Old posscale: %g   New posscale: %g",
-                 f->posscale, posscale);
-  io_logging_msg(log, INT32_C(8),
-                 "Old weightscale: %g   New weightscale: %g",
-                 f->weightscale, weightscale);
-  f->posscale = posscale;
-  f->weightscale = weightscale;
-  
-  return;
-}
 
 extern uint64_t
-io_gizmo_scale_particles(io_logging_t log,
+io_pkdgrav_scale_particles(io_logging_t log,
                          double maxpos[],
                          double minpos[],
-                         double *boxsize,
+                         double boxsize,
                          double expansion,
-                         double posscale,
-                         double mmass,
+                         double KpcUnit,
+                         double MsolUnit,
+                         double ErgPerGmUnit,
+                         double KmPerSecUnit,
                          uint64_t particles_read,
                          io_file_strg_struct_t strg)
 {
   double box[3], shift[3];
   double scale_pos, scale_mom, scale_weight, scale_u;
   uint64_t i;
-  
-  /* Now we can do the scaling */
-  box[0] = fabs(maxpos[0] - minpos[0]);
-  box[1] = fabs(maxpos[1] - minpos[1]);
-  box[2] = fabs(maxpos[2] - minpos[2]);
-  if (isgreater(box[0], *boxsize)) {
-    io_logging_warn(log, INT32_C(1),
-                    "x-Separation of particles exceeds boxsize "
-                    "(%g > %g), resetting boxsize.",
-                    box[0], *boxsize);
-    *boxsize = box[0];
-  }
-  if (isgreater(box[1], *boxsize)) {
-    io_logging_warn(log, INT32_C(1),
-                    "y-Separation of particles exceeds boxsize "
-                    "(%g > %g), resetting boxsize.",
-                    box[1], *boxsize);
-    *boxsize = box[1];
-  }
-  if (isgreater(box[2], *boxsize)) {
-    io_logging_warn(log, INT32_C(1),
-                    "z-Separation of particles exceeds boxsize "
-                    "(%g > %g), resetting boxsize.",
-                    box[2], *boxsize);
-    *boxsize = box[2];
-  }
+
   io_logging_msg(log, INT32_C(4),
                  "Extreme positions: xmin = %g  xmax = %g",
                  minpos[0], maxpos[0]);
@@ -859,14 +817,24 @@ io_gizmo_scale_particles(io_logging_t log,
    *
    *    NOTE: the thermal energy is scaled to (km/sec)^2 !!!!!
    *================================================================*/
-  scale_pos    = 1.0/(*boxsize);
+  /* We use directly the unit information in the snapshot to make the convertions
+   */
+  scale_pos    = 1.0;
+  /* Velocity output in PKDGRAV3 is \dot{x} directly, for safety we convert to
+   * km/s and then apply the conversion to internal units as in the docs
+   */
 #ifdef NO_EXPANSION
-  scale_mom    = 1.0 / (*boxsize * posscale * 100.);
+  scale_mom    = KmPerSecUnit / (boxsize * 100.);
 #else
-  scale_mom    = sqrt(expansion) * expansion / (*boxsize * posscale * 100.);
+  scale_mom    = KmPerSecUnit * expansion * expansion /
+                        ( boxsize * 100.);
 #endif
-  scale_weight = 1.0/mmass;
-  scale_u      = 1.0; // already in (km/sec)^2 !?
+
+  /* The mass unit seems to be arbitrary, so we left it there */
+  scale_weight = 1.0;
+
+  /* Internal energy per unit mass conversion to (km/sec)^2 */
+  scale_u      = ErgPerGmUnit / 1e10;
   
   
   
@@ -938,7 +906,7 @@ if (strg.u.val != NULL) strg.u.val = (void *)(((char *)strg.u.val) + strg.u.stri
 
 #ifdef WITH_MPI
 extern void
-io_gizmo_scale_global(io_logging_t log,
+io_pkdgrav_scale_global(io_logging_t log,
                       MPI_Comm comm,
                       double *maxpos,
                       double *minpos,
@@ -996,8 +964,8 @@ io_gizmo_scale_global(io_logging_t log,
  *    Implementation of local functions                               *
  \**********************************************************************/
 
-inline static io_gizmo_t
-local_openopen(io_logging_t log, io_gizmo_t f, io_file_mode_t mode)
+inline static io_pkdgrav_t
+local_openopen(io_logging_t log, io_pkdgrav_t f, io_file_mode_t mode)
 {
   if (mode == IO_FILE_READ) {
     //f->file = fopen(f->fname, IO_FILE_MODE_READ);
@@ -1007,7 +975,7 @@ local_openopen(io_logging_t log, io_gizmo_t f, io_file_mode_t mode)
       return NULL;
     }
   } else {
-    io_logging_fatal(log, "No write implementation for GIZMO HDF5.");
+    io_logging_fatal(log, "No write implementation for PKDGRAV HDF5.");
     return NULL;
     //f->file = fopen(f->fname, IO_FILE_MODE_WRITE);
     //if (f->file == NULL) {
@@ -1023,7 +991,7 @@ local_openopen(io_logging_t log, io_gizmo_t f, io_file_mode_t mode)
 
 inline static void
 local_openswapped(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   io_file_swap_t swapped)
 {
   if (f->mode == IO_FILE_READ) {
@@ -1050,17 +1018,17 @@ local_openswapped(io_logging_t log,
 }
 
 inline static void
-local_openversion(io_logging_t log, io_gizmo_t f)
+local_openversion(io_logging_t log, io_pkdgrav_t f)
 {
   f->ver = 1;
-  io_logging_msg(log, INT32_C(2), "Assuming a public GIZMO v1 file.");
+  io_logging_msg(log, INT32_C(2), "Assuming a public PKDGRAV3 v1 file.");
   
   return;
 }
 
 inline static int32_t
 local_write_common(io_logging_t log,
-                   io_gizmo_t f,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    int32_t bytes)
 {
@@ -1103,7 +1071,7 @@ bfile, bstore); \
 }
 static uint64_t
 local_get_block_pos(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t *pskip,
                     uint64_t *pread,
                     io_file_strg_struct_t strg,
@@ -1156,7 +1124,7 @@ local_get_block_pos(io_logging_t log,
     
     io_logging_msg(log, INT32_C(2), "local_get_block_pos(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
     
-    io_util_readhdf5_gizmo(log, f, "Coordinates", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
+    io_util_readhdf5_pkdgrav(log, f, "Coordinates", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
     
     io_logging_msg(log, INT32_C(2), "local_get_block_pos(): part type %d: read particles into CommBuffer", type);
     
@@ -1225,7 +1193,7 @@ local_get_block_pos(io_logging_t log,
 
 static uint64_t
 local_get_block_vel(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t pskip,
                     uint64_t pread,
                     io_file_strg_struct_t strg,
@@ -1272,7 +1240,7 @@ local_get_block_vel(io_logging_t log,
     
     io_logging_msg(log, INT32_C(2), "local_get_block_vel(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
     
-    io_util_readhdf5_gizmo(log, f, "Velocities", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
+    io_util_readhdf5_pkdgrav(log, f, "Velocities", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
     
     /* Loop over the particle positions */
     for (i = 0; i < num_elements * f->header->np[type]; i += num_elements) {
@@ -1316,7 +1284,7 @@ local_get_block_vel(io_logging_t log,
 
 static uint64_t
 local_get_block_id(io_logging_t log,
-                   io_gizmo_t f,
+                   io_pkdgrav_t f,
                    uint64_t pskip,
                    uint64_t pread,
                    io_file_strg_struct_t strg,
@@ -1331,16 +1299,19 @@ local_get_block_id(io_logging_t log,
   hid_t hdf5_datatype = 0;
   void * CommBuffer;
   uint64_t num_bytes = 0;
-  bool long_ids = false;
+  /*bool long_ids = false;
   
-  /* D. Rennehan: Going to assume that if there is a high word for any particle we are using long-ids. */
+  // D. Rennehan: Going to assume that if there is a high word for any particle we are using long-ids.
   for (type = 0; type < 6; type ++)
   {
     if (f->header->nallhighw[type] != 0)
     {
       long_ids = true;
     }
-  }
+  }*/
+
+  /* PKDGRAV3 outputs long ids by default */
+  bool long_ids = true;
   
   for (type = 0; type < 6; type ++)
   {
@@ -1371,7 +1342,7 @@ local_get_block_id(io_logging_t log,
     
     io_logging_msg(log, INT32_C(2), "local_get_block_id(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
     
-    io_util_readhdf5_gizmo(log, f, "ParticleIDs", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
+    io_util_readhdf5_pkdgrav(log, f, "ParticleIDs", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
     
     /* Loop over the particle IDs */
     for (i = 0; i < f->header->np[type]; i++) {
@@ -1398,7 +1369,7 @@ local_get_block_id(io_logging_t log,
 
 static uint64_t
 local_get_block_mass(io_logging_t log,
-                     io_gizmo_t f,
+                     io_pkdgrav_t f,
                      uint64_t pskip,
                      uint64_t pread,
                      io_file_strg_struct_t strg,
@@ -1465,7 +1436,7 @@ f->mmass = fweight; \
         return UINT64_C(0);
       }
       
-      io_util_readhdf5_gizmo(log, f, "Masses", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
+      io_util_readhdf5_pkdgrav(log, f, "Masses", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
       
       /* Loop over the particle massess */
       for (i = 0; i < f->header->np[type]; i++) {
@@ -1522,7 +1493,7 @@ f->mmass = fweight; \
 
 static uint64_t
 local_get_block_u(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   uint64_t pskip,
                   uint64_t pread,
                   io_file_strg_struct_t strg,
@@ -1559,7 +1530,7 @@ local_get_block_u(io_logging_t log,
       
       io_logging_msg(log, INT32_C(2), "local_get_block_u(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
       
-      io_util_readhdf5_gizmo(log, f, "InternalEnergy", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
+      io_util_readhdf5_pkdgrav(log, f, "InternalEnergy", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
     }
     
     /* Loop over the particles */
@@ -1603,7 +1574,7 @@ local_get_block_u(io_logging_t log,
 #include "../define.h"
 static uint64_t
 local_get_block_z(io_logging_t log,
-                  io_gizmo_t f,
+                  io_pkdgrav_t f,
                   uint64_t pskip,
                   uint64_t pread,
                   io_file_strg_struct_t strg,
@@ -1650,7 +1621,7 @@ local_get_block_z(io_logging_t log,
       
       io_logging_msg(log, INT32_C(2), "local_get_block_z(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
       
-      io_util_readhdf5_gizmo(log, f, "Metallicity", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
+      io_util_readhdf5_pkdgrav(log, f, "Metallicity", type, num_elements, hdf5_datatype, hdf5_grp, CommBuffer);
       
       /* Loop over the particle positions */
       for (i = 0; i < num_elements * f->header->np[type]; i += num_elements) {
@@ -1695,7 +1666,7 @@ local_get_block_z(io_logging_t log,
 
 static uint64_t
 local_get_block_age(io_logging_t log,
-                    io_gizmo_t f,
+                    io_pkdgrav_t f,
                     uint64_t pskip,
                     uint64_t pread,
                     io_file_strg_struct_t strg,
@@ -1734,7 +1705,7 @@ local_get_block_age(io_logging_t log,
       io_logging_msg(log, INT32_C(2), "local_get_block_age(): part type %d: allocated %" PRIu64 " bytes for CommBuffer", type, num_bytes);
       
       /* StellarAge should be the proper tag in the HDF5 file */
-      io_util_readhdf5_gizmo(log, f, "StellarFormationTime", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
+      io_util_readhdf5_pkdgrav(log, f, "StellarFormationTime", type, 1, hdf5_datatype, hdf5_grp, CommBuffer);
     }
     
     /* Loop over the particles */

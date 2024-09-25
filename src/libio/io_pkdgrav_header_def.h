@@ -1,12 +1,11 @@
-#ifndef IO_GIZMO_HEADER_DEF_H 
-#define IO_GIZMO_HEADER_DEF_H
+#ifndef IO_PKDGRAV_HEADER_DEF_H 
+#define IO_PKDGRAV_HEADER_DEF_H
 
-/* $Id: io_gizmo_header_def.h,v 1.2 2006/11/13 15:22:07 knolli Exp $ */
 
 /**
- * \file io_gizmo_header_def.h
+ * \file io_pkdgrav_header_def.h
  *
- * Provides the structure definition for the Gizmo header
+ * Provides the structure definition for the Pkdgrav header
  * structure. Including useful typedefs.
  */
 
@@ -15,50 +14,14 @@
  *    Includes                                                        * 
  \**********************************************************************/
 #include <inttypes.h>
+#include "io_pkdgrav_header_def.h"
 
 
 /**********************************************************************\
  *    Global defines, structure definitions and typedefs              * 
  \**********************************************************************/
 
-/** 
- * The size (in bytes) reserved at the beginning of a file for
- * the header 
- */
-#define GIZMO_HEADER_SIZE 256
-
-/** Defines the total used size (in bytes) of the header */
-#define GIZMO_HEADER_HEADERSIZE ( 26*sizeof(int) +12*sizeof(uint32_t) +12*sizeof(double))
-
-/** Defines the number of unused bytes in the header */
-#define GIZMO_HEADER_FILLHEADER (  GIZMO_HEADER_SIZE - GIZMO_HEADER_HEADERSIZE)
-
-/**
- * The header structure itself
- */
-/*
- struct io_gizmo_header_struct {
- int32_t np[6];
- double massarr[6];
- double expansion;
- double redshift;
- int32_t flagsfr;
- int32_t flagfeedback;
- uint32_t nall[6];
- int32_t flagcooling;
- int32_t numfiles;
- double boxsize;
- double omega0;
- double omegalambda;
- double hubbleparameter;
- int32_t flagstellarage;
- int32_t flagmetals;
- uint32_t nallhighw[6];
- int32_t flagentropyu;
- char unused[GIZMO_HEADER_FILLHEADER+1];
- };*/
-
-struct io_gizmo_header_struct {
+struct io_pkdgrav_header_struct {
   unsigned int np[6];                 /*!< number of particles of each type in this file */
   double massarr[6];               /*!< mass of particles of each type. If 0, then the masses are explicitly
                                     stored in the mass-block of the snapshot file, otherwise they are omitted */
@@ -94,13 +57,19 @@ struct io_gizmo_header_struct {
   
   char fill[18];                /*!< fills to 256 Bytes */
   char names[15][2];
+
+  double MsolUnit;
+  double KpcUnit;
+  double ErgPerGmUnit;
+  double KmPerSecUnit;
 };
 
 /** Convenient typedef */
-typedef struct io_gizmo_header_struct io_gizmo_header_struct_t;
+typedef struct io_pkdgrav_header_struct io_pkdgrav_header_struct_t;
 
 /** Convenient typedef */
-typedef io_gizmo_header_struct_t *io_gizmo_header_t;
+typedef io_pkdgrav_header_struct_t *io_pkdgrav_header_t;
 
 
-#endif /* IO_GIZMO_HEADER_DEF_H */
+#endif /* IO_PKDGRAV_HEADER_DEF_H */
+

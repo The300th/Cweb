@@ -51,9 +51,6 @@
 /** Descriptive string of the ASCII file type */
 #define IO_FILE_ASCII_STR "ASCII"
 
-/** Descriptive string of the AHF_HALOS file type */
-#define IO_FILE_HALOS_STR "AHF_halos (ASCII)"
-
 /** Descriptive string of the CubeP3M file type */
 #define IO_FILE_CUBEP3M_STR "CubeP3M binary"
 
@@ -64,6 +61,8 @@
 #define IO_FILE_GADGET_STR "Gadget binary"
 
 #define IO_FILE_GIZMO_STR "GIZMO HDF5"
+
+#define IO_FILE_PKDGRAV_STR "PKDGRAV3 HDF5"
 
 /** Descriptive string of the Multiple Gadget file type */
 #define IO_FILE_MGADGET_STR "Multiple Gadget binary"
@@ -122,16 +121,16 @@ typedef enum {
 	IO_FILE_CUBEP3M = 20,
 	/** For MCubeP3M format */
 	IO_FILE_MCUBEP3M = 21,
-	/** For AHF_halos in ASCII format */
-	IO_FILE_HALOS = 30,
 	/** For Gadget format */
 	IO_FILE_GADGET = 60,
 	/** For Gadget format in multiple files */
 	IO_FILE_MGADGET = 61,
-  /** For GIZMO format */
-  IO_FILE_GIZMO = 50,
-  /** For GIZMO format in multiple files */
-  IO_FILE_MGIZMO = 51,
+      /** For GIZMO format */
+      IO_FILE_GIZMO = 50,
+      /** For GIZMO format in multiple files */
+      IO_FILE_MGIZMO = 51,
+      /** For PKDGRAV3 format */
+      IO_FILE_PKDGRAV = 40,
 	/** For ART format */
 	IO_FILE_ART = 70,
 	/** For ART format, with new reader. */

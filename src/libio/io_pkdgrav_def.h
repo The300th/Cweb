@@ -1,20 +1,22 @@
-#ifndef IO_DEVA_DEF_H
-#define IO_DEVA_DEF_H
+#ifndef IO_PKDGRAV_DEF_H
+#define IO_PKDGRAV_DEF_H
+
 
 /**
- * \file io_deva_def.h
+ * \file io_pkdgrav_def.h
  *
- * Provides the structure definition for the DEVA file structure.
+ * Provides the structure definition for the Pkdgrav file structure.
  */
 
+#ifdef WITH_HDF5
 
 /**********************************************************************\
  *    Includes                                                        * 
 \**********************************************************************/
 #include <stdio.h>
 #include <stdint.h>
-
-#include "io_deva_header_def.h"
+#include <hdf5.h>
+#include "io_pkdgrav_header_def.h"
 #include "io_file.h"
 
 
@@ -25,7 +27,7 @@
 /**
  * The file structure itself
  */
-struct io_deva_struct {
+struct io_pkdgrav_struct {
 	/** Holds the filetype ID, *must* be first in the structure */
 	io_file_type_t ftype;
 #ifdef WITH_MPI
@@ -41,16 +43,16 @@ struct io_deva_struct {
 	int rank_mycomm;
 #endif
 	/** Holds the file stream of the currently opened file part */
-	FILE *file;
+	hid_t file;
 	/** Holds the filenames of the parts, array of length parts */
 	char *fname;
 	/** In which mode should this be opened */
 	io_file_mode_t mode;
 	/** Is this file byteswapped? */
 	io_file_swap_t swapped;
-	/** DEVA version */
+	/** Pkdgrav version */
 	int8_t ver;
-	/** DEVA header size */
+	/** Pkdgrav header size */
 	int32_t headsize;
 	/** Stores the total number of particles in the file */
 	uint64_t no_part;
@@ -78,14 +80,16 @@ struct io_deva_struct {
 	/** Scaling value to convert from internal mass to Msun */
 	double weightscale;
 	/** Holds the header information for each file part */
-	io_deva_header_t header;
+	io_pkdgrav_header_t header;
 };
 
 /** Convenient typedef */
-typedef struct io_deva_struct io_deva_struct_t;
+typedef struct io_pkdgrav_struct io_pkdgrav_struct_t;
 
 /** Convenient typedef */
-typedef io_deva_struct_t *io_deva_t;
+typedef io_pkdgrav_struct_t *io_pkdgrav_t;
 
+#endif // WITH_HDF5
 
-#endif /* IO_DEVA_DEF_H */
+#endif /* IO_PKDGRAV_DEF_H */
+
