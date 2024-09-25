@@ -27,8 +27,9 @@ def Randomsample_data(data, N):
 
 # just look at a single file
 #--------------------------------------------------
-Cwebfile = '//Users/aknebe/Office/Analysis/COLA_CW/lcdm_z0p000.00128.Rs=5.00.Cweb'
-Cweb     = readCweb(Cwebfile,PWEB=True)
+Cwebfile = '/Users/aknebe/Office/DATA/Tests/Cweb/FullBox_z0.0_0256.00064.Rs=25.00.Cweb'
+Cwebfile = '/Users/aknebe/Office/DATA/Tests/Cweb/FullBox_z0.0_0256+Tweb.00064.Rs=25.00.Cweb'
+Cweb     = readCweb(Cwebfile)
 
 x     = Cweb[:,0]
 y     = Cweb[:,1]
