@@ -19,6 +19,7 @@
 #include "io_amiga.h"
 #include "io_ares.h"
 #include "io_ascii.h"
+#include "io_halos.h"
 #include "io_cubep3m.h"
 #include "io_art.h"
 #include "io_gadget.h"
@@ -26,7 +27,6 @@
 #ifdef WITH_HDF5
 #include "io_gizmo.h"
 #include "io_mgizmo.h"
-#include "io_pkdgrav.h"
 #endif
 #include "io_deva.h"
 #include "io_tipsy.h"

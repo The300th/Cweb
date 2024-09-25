@@ -36,7 +36,7 @@ struct io_parameter_struct {
 	double         UserDvir;
 	double         MaxGatherRad;
 	int            lb_level;
-  double         AHF_VTUNE;
+  double         RSMOOTH;
   int            AHF_MINPART;
     
   double         GADGET_m2Msunh;

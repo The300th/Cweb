@@ -1,12 +1,10 @@
-#ifndef IO_PKDGRAV_HEADER_H
-#define IO_PKDGRAV_HEADER_H
-
-/* $Id: io_pkdgrav_header.h,v 1.2 2006/11/13 15:22:07 knolli Exp $ */
+#ifndef IO_HALOS_HEADER_H
+#define IO_HALOS_HEADER_H
 
 /**
- * \file io_pkdgrav_header.h
+ * \file io_halos_header.h
  *
- * Provides functions for reading and writing the header of pkdgrav
+ * Provides functions for reading and writing the header of AHF_HALOS
  * files.
  */
 
@@ -14,8 +12,8 @@
 /**********************************************************************\
  *    Includes                                                        * 
 \**********************************************************************/
-#include "io_pkdgrav_header_def.h"
-#include "io_pkdgrav_def.h"
+#include "io_halos_header_def.h"
+#include "io_halos_def.h"
 #include "io_logging.h"
 
 
@@ -29,23 +27,34 @@
 \**********************************************************************/
 
 /**
- * \brief Reads a pkdgrav header.
+ * \brief Reads a AHF_HALOS header.
  *
  * The function will first rewind the file pointer to the start
  * of the header and then read in everything. Then it will
  * position the file pointer to the start of the particle date.
  *
  * \param log  A logging object.
- * \param f    A pkdgrav file object.
+ * \param f    An AHF_HALOS file object.
  *
  * \return A freshly filled header, or NULL, in case of memory
  *         problems.
  */
-extern io_pkdgrav_header_t
-io_pkdgrav_header_get(io_logging_t log, io_pkdgrav_t f);
+extern io_halos_header_t
+io_halos_header_get(io_logging_t log, io_halos_t f);
 
 /**
- * \brief This will delete a pkdgrav.header object.
+ * \brief Generates an empty header object.
+ *
+ * \param log  A logging object.
+ *
+ * \return A freshly allocated header, or NULL, in case of memory
+ *         problems.
+ */
+extern io_halos_header_t
+io_halos_header_new(io_logging_t log);
+
+/**
+ * \brief This will delete an halos_header object.
  *
  * \param log      The logging object.
  * \param *header  A pointer to the variable holding the header object.
@@ -54,21 +63,21 @@ io_pkdgrav_header_get(io_logging_t log, io_pkdgrav_t f);
  * \return Nothing.
  */
 extern void
-io_pkdgrav_header_del(io_logging_t log, io_pkdgrav_header_t *header);
+io_halos_header_del(io_logging_t log, io_halos_header_t *header);
 
 /**
- * \brief Writes a header to the file.
+ * \brief Writes the header to the file
  *
- * \param log     The logging object.
+ * \param log     A logging object.
  * \param header  The header to write.
  * \param f       The file the header will be written to.
  *
  * \return Nothing.
  */
 extern void
-io_pkdgrav_header_write(io_logging_t log,
-                       io_pkdgrav_header_t header,
-                       io_pkdgrav_t f);
+io_halos_header_write(io_logging_t log,
+                      io_halos_header_t header,
+                      io_halos_t f);
 
 /**
  * \briefs Writes the header information to the logfile.
@@ -79,7 +88,7 @@ io_pkdgrav_header_write(io_logging_t log,
  * \return Nothing.
  */
 extern void
-io_pkdgrav_header_log(io_logging_t log, io_pkdgrav_header_t header);
+io_halos_header_log(io_logging_t log, io_halos_header_t header);
 
 
-#endif /* IO_PKDGRAV_HEADER_H */
+#endif /* IO_HALOS_HEADER_H */
