@@ -66,7 +66,7 @@ def read_Cweb(filename):
         # how to access ==> Cweb[inode,ivalue]
         
     print('   done')
-    return Cweb
+    return Cweb, Pweb
 
 
 #==============================================================================
@@ -190,9 +190,9 @@ def readCweb(fileall, endian=None, UonGrid=None, quiet=None, selected=None):
 
     del(swap)
     if selected is None:
-        return(data)
+        return(data, Pweb)
     else:
-        return(data[:, selected])
+        return(data[:, selected], Pweb)
 
 
 #==============================================================================
