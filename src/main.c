@@ -1425,7 +1425,7 @@ int main(int argc, char **argv)
                       FWRITE_TMP_FLOAT;
                       tmp_float = vorticity[Z]; // 10
                       FWRITE_TMP_FLOAT;
-                      tmp_float = lambda1; // 11
+                      tmp_float = lambda1;  // 11
                       FWRITE_TMP_FLOAT;
                       tmp_float = lambda2;  // 12
                       FWRITE_TMP_FLOAT;
